@@ -132,6 +132,10 @@ Route group gated by `role=admin` in the JWT:
 - Hosted on the owner's Azure tenant; cost minimized (target: near-zero, a few euros/month at most).
 - No offline-first requirement; reliable venue Wi-Fi is assumed.
 - Notifications (match reminders) are explicitly **out of scope for v1** — may be added later.
+- **Theming/branding must be easily adjustable** (colors, fonts, logo/images), config-file based rather than runtime-configurable:
+  - Colors and fonts are design tokens: CSS custom properties in a single `src/styles/theme.css` (e.g. `--color-primary`, `--font-heading`), wired into `tailwind.config.js` (`theme.extend.colors.primary = 'var(--color-primary)'`, etc.) so components use stable utility classes like `bg-primary` while the actual values live in one file.
+  - Logo/images are centralized in `src/assets/branding/`, referenced through a single `src/branding.ts` constants file — components import from there instead of hardcoding paths.
+  - Re-skinning the app means editing `theme.css` + `tailwind.config.js` + swapping files in `branding/`, with no component code changes required. No new data model, admin UI, or runtime cost.
 
 ## 9. Local Development & Tooling
 
@@ -159,3 +163,4 @@ Route group gated by `role=admin` in the JWT:
 | Forfeit/unplayed match handling | No new state; excluded from standings, admin can enter a synthetic result later |
 | Live-scoring rule enforcement | Full server-side enforcement (bust, double-out, auto leg/match completion) |
 | Notifications | Deferred, out of scope for v1 |
+| Theming/branding adjustability | Config-file based (theme tokens + branding assets folder), not runtime-admin-configurable |
