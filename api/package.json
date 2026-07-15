@@ -1,0 +1,22 @@
+{
+  "name": "dartstracker-api",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "npm run build && func start",
+    "azurite": "azurite --silent --location .azurite --debug .azurite/debug.log",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.16.2"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.12.1",
+    "azurite": "^3.36.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
