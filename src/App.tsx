@@ -1,3 +1,7 @@
 export default function App() {
-  return <h1>Darts League</h1>;
+  return (
+    <h1 className="text-primary font-heading text-3xl font-bold">
+      Darts League
+    </h1>
+  );
 }
