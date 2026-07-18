@@ -8,7 +8,8 @@
     "watch": "tsc -w",
     "start": "npm run build && func start",
     "azurite": "azurite --silent --location .azurite --debug .azurite/debug.log",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@azure/functions": "^4.16.2",
