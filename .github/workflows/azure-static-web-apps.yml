@@ -51,6 +51,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          npm prune --omit=dev --omit=optional
       - name: Build and Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
