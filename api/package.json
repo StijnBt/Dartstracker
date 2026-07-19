@@ -2,23 +2,27 @@
   "name": "dartstracker-api",
   "version": "0.0.1",
   "private": true,
-  "main": "dist/src/functions/*.js",
+  "main": "dist/src/functions/**/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "start": "npm run build && func start",
     "azurite": "azurite --silent --location .azurite --debug .azurite/debug.log",
     "test": "vitest run",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@azure/functions": "^4.16.2",
     "@prisma/adapter-mssql": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "argon2": "^0.45.0",
     "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
     "mssql": "^12.7.0"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.1",
     "azure-functions-core-tools": "^4.12.1",
     "azurite": "^3.36.0",

@@ -1,12 +1,20 @@
-import { branding } from "./branding";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./lib/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import Login from "./pages/auth/Login";
+import Home from "./pages/Home";
 
 export default function App() {
   return (
-    <div className="flex items-center gap-3 p-4">
-      <img src={branding.logoSrc} alt={branding.appName} width={40} height={40} />
-      <h1 className="text-primary font-heading text-3xl font-bold">
-        {branding.appName}
-      </h1>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Home />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
