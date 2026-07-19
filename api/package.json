@@ -15,6 +15,7 @@
     "@azure/functions": "^4.16.2",
     "@prisma/adapter-mssql": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "argon2": "^0.45.0",
     "dotenv": "^17.4.2",
     "mssql": "^12.7.0"
   },
