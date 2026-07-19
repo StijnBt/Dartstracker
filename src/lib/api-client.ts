@@ -37,3 +37,53 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
 export async function logout(): Promise<void> {
   await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
 }
+
+export type Member = {
+  id: number;
+  username: string;
+  displayName: string;
+  role: "admin" | "player";
+  isActive: boolean;
+};
+
+export type CreateMemberInput = {
+  username: string;
+  displayName: string;
+  role: "admin" | "player";
+  password: string;
+};
+
+export type UpdateMemberInput = {
+  displayName?: string;
+  role?: "admin" | "player";
+  isActive?: boolean;
+  password?: string;
+};
+
+export async function listMembers(): Promise<Member[]> {
+  const response = await fetch("/api/users", { credentials: "same-origin" });
+  const data = await parseJsonResponse<{ users: Member[] }>(response);
+  return data.users;
+}
+
+export async function createMember(input: CreateMemberInput): Promise<Member> {
+  const response = await fetch("/api/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ user: Member }>(response);
+  return data.user;
+}
+
+export async function updateMember(id: number, input: UpdateMemberInput): Promise<Member> {
+  const response = await fetch(`/api/users/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ user: Member }>(response);
+  return data.user;
+}

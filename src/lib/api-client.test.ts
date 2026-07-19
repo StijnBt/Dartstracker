@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { login, logout, fetchCurrentUser } from "./api-client";
+import { login, logout, fetchCurrentUser, listMembers, createMember, updateMember } from "./api-client";
 
 describe("api-client", () => {
   beforeEach(() => {
@@ -60,6 +60,79 @@ describe("api-client", () => {
         "/api/auth/logout",
         expect.objectContaining({ method: "POST", credentials: "same-origin" })
       );
+    });
+  });
+
+  describe("listMembers", () => {
+    it("fetches and returns all members", async () => {
+      const users = [
+        { id: 1, username: "admin", displayName: "Administrator", role: "admin", isActive: true },
+        { id: 2, username: "bsmith", displayName: "Bob Smith", role: "player", isActive: false },
+      ];
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ users }), { status: 200 }));
+
+      const result = await listMembers();
+
+      expect(fetch).toHaveBeenCalledWith("/api/users", expect.objectContaining({ credentials: "same-origin" }));
+      expect(result).toEqual(users);
+    });
+  });
+
+  describe("createMember", () => {
+    it("posts the new member and returns it", async () => {
+      const user = { id: 2, username: "bsmith", displayName: "Bob Smith", role: "player", isActive: true };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ user }), { status: 201 }));
+
+      const result = await createMember({
+        username: "bsmith",
+        displayName: "Bob Smith",
+        role: "player",
+        password: "secretpw1",
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/users",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "same-origin",
+          body: JSON.stringify({
+            username: "bsmith",
+            displayName: "Bob Smith",
+            role: "player",
+            password: "secretpw1",
+          }),
+        })
+      );
+      expect(result).toEqual(user);
+    });
+
+    it("throws the server's error message on failure", async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response(JSON.stringify({ error: "Username already exists" }), { status: 409 })
+      );
+
+      await expect(
+        createMember({ username: "admin", displayName: "Dup", role: "player", password: "secretpw1" })
+      ).rejects.toThrow("Username already exists");
+    });
+  });
+
+  describe("updateMember", () => {
+    it("patches the member and returns it", async () => {
+      const user = { id: 2, username: "bsmith", displayName: "Robert Smith", role: "player", isActive: true };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ user }), { status: 200 }));
+
+      const result = await updateMember(2, { displayName: "Robert Smith" });
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/users/2",
+        expect.objectContaining({
+          method: "PATCH",
+          credentials: "same-origin",
+          body: JSON.stringify({ displayName: "Robert Smith" }),
+        })
+      );
+      expect(result).toEqual(user);
     });
   });
 });
