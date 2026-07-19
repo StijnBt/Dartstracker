@@ -1,0 +1,8 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "DATABASE_URL": "sqlserver://localhost:1433;database=dartstracker;user=sa;password=DevPassword123!;encrypt=true;trustServerCertificate=true"
+  }
+}
