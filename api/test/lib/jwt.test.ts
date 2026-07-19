@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import jwt from "jsonwebtoken";
 import { signAuthToken, verifyAuthToken } from "../../src/lib/jwt";
 
 describe("jwt", () => {
@@ -19,6 +20,13 @@ describe("jwt", () => {
   it("returns null for a token signed with a different secret", () => {
     const token = signAuthToken({ userId: 1, role: "player" });
     process.env.JWT_SECRET = "a-completely-different-secret-value";
+    expect(verifyAuthToken(token)).toBeNull();
+  });
+
+  it("returns null for a token signed with a different algorithm", () => {
+    const token = jwt.sign({ userId: 1, role: "admin" }, process.env.JWT_SECRET as string, {
+      algorithm: "HS384",
+    });
     expect(verifyAuthToken(token)).toBeNull();
   });
 });

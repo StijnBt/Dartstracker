@@ -9,6 +9,12 @@ type LoginBody = {
   password?: unknown;
 };
 
+// A precomputed argon2 hash with no corresponding real password. Verifying
+// against it on the "user not found" path costs the same as a real
+// password check, so response timing doesn't reveal whether a username exists.
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=65536,p=4,t=3$kLtb6NK7Klv3WlfCOvPoJg$enctMBd8w9sMfzL1ZhMGntGp6y7Qp3Dml5c7QlJ++iw";
+
 export async function login(
   request: HttpRequest,
   context: InvocationContext
@@ -27,6 +33,7 @@ export async function login(
 
   const user = await prisma.user.findUnique({ where: { username } });
   if (!user || !user.isActive || !isRole(user.role)) {
+    await verifyPassword(DUMMY_PASSWORD_HASH, password);
     return { status: 401, jsonBody: { error: "Invalid username or password" } };
   }
 

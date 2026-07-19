@@ -4,6 +4,7 @@ import { isRole, type Role } from "./auth-types";
 export const AUTH_COOKIE_NAME = "authToken";
 export const TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const TOKEN_TTL = "30d";
+const TOKEN_ALGORITHM = "HS256";
 
 export type AuthClaims = {
   userId: number;
@@ -19,12 +20,12 @@ function getSecret(): string {
 }
 
 export function signAuthToken(claims: AuthClaims): string {
-  return jwt.sign(claims, getSecret(), { expiresIn: TOKEN_TTL });
+  return jwt.sign(claims, getSecret(), { expiresIn: TOKEN_TTL, algorithm: TOKEN_ALGORITHM });
 }
 
 export function verifyAuthToken(token: string): AuthClaims | null {
   try {
-    const payload = jwt.verify(token, getSecret());
+    const payload = jwt.verify(token, getSecret(), { algorithms: [TOKEN_ALGORITHM] });
     if (
       typeof payload === "object" &&
       payload !== null &&

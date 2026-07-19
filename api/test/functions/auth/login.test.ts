@@ -53,6 +53,12 @@ describe("login function", () => {
     expect(result.status).toBe(401);
   });
 
+  it("still calls verifyPassword when the user doesn't exist, to equalize response timing", async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+    await login(createRequest({ username: "admin", password: "secret" }), createContext());
+    expect(verifyPassword).toHaveBeenCalledTimes(1);
+  });
+
   it("returns 401 when the user is inactive", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ ...activeAdmin, isActive: false });
     const result = await login(createRequest({ username: "admin", password: "secret" }), createContext());
