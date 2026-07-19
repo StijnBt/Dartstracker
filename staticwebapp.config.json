@@ -2,5 +2,8 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/branding/*", "/api/*", "*.{svg,png,ico,webmanifest,js,css}"]
+  },
+  "platform": {
+    "apiRuntime": "node:20"
   }
 }
