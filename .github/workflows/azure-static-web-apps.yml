@@ -41,6 +41,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build API
+        working-directory: api
+        env:
+          DATABASE_URL: "sqlserver://localhost:1433;database=dartstracker;user=sa;password=DevPassword123!;encrypt=true;trustServerCertificate=true"
+        run: |
+          npm ci
+          npm run build
       - name: Build and Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -51,6 +61,7 @@ jobs:
           app_location: "/"
           api_location: "api"
           output_location: "dist"
+          skip_api_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
