@@ -1,20 +1,33 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
-import { branding } from "./branding";
+import * as apiClient from "./lib/api-client";
+
+vi.mock("./lib/api-client");
 
 describe("App", () => {
-  it("renders the branded app name using the theme's primary color and heading font", () => {
-    render(<App />);
-    const heading = screen.getByRole("heading", { name: branding.appName });
-    expect(heading).toBeInTheDocument();
-    expect(heading).toHaveClass("text-primary");
-    expect(heading).toHaveClass("font-heading");
+  beforeEach(() => {
+    window.history.pushState({}, "", "/");
   });
 
-  it("renders the branded logo", () => {
+  it("redirects to the login page when there is no active session", async () => {
+    vi.mocked(apiClient.fetchCurrentUser).mockResolvedValue(null);
     render(<App />);
-    const logo = screen.getByRole("img", { name: branding.appName });
-    expect(logo).toHaveAttribute("src", branding.logoSrc);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Log in" })).toBeInTheDocument();
+    });
+  });
+
+  it("renders the home page when a session is active", async () => {
+    vi.mocked(apiClient.fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      username: "admin",
+      role: "admin",
+      displayName: "Administrator",
+    });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.getByText("Administrator")).toBeInTheDocument();
+    });
   });
 });
