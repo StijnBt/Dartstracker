@@ -18,9 +18,11 @@
     "@prisma/client": "^7.8.0",
     "argon2": "^0.45.0",
     "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
     "mssql": "^12.7.0"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.1",
     "azure-functions-core-tools": "^4.12.1",
     "azurite": "^3.36.0",
