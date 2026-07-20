@@ -146,6 +146,15 @@ export type MatchUpdateResult = {
   player2Id: number;
 };
 
+export type SubmitMatchResultResponse = MatchUpdateResult & {
+  player1Legs: number | null;
+  player2Legs: number | null;
+  player1Checkout: number | null;
+  player2Checkout: number | null;
+  resultEnteredBy: SeasonParticipantSummary | null;
+  resultEnteredAt: string | null;
+};
+
 export async function listSeasons(): Promise<SeasonSummary[]> {
   const response = await fetch("/api/seasons", { credentials: "same-origin" });
   const data = await parseJsonResponse<{ seasons: SeasonSummary[] }>(response);
@@ -198,13 +207,16 @@ export type SubmitMatchResultInput = {
   player2Checkout?: number;
 };
 
-export async function submitMatchResult(id: number, input: SubmitMatchResultInput): Promise<SeasonMatch> {
+export async function submitMatchResult(
+  id: number,
+  input: SubmitMatchResultInput
+): Promise<SubmitMatchResultResponse> {
   const response = await fetch(`/api/matches/${id}/result`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
     body: JSON.stringify(input),
   });
-  const data = await parseJsonResponse<{ match: SeasonMatch }>(response);
+  const data = await parseJsonResponse<{ match: SubmitMatchResultResponse }>(response);
   return data.match;
 }
