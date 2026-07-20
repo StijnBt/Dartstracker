@@ -19,7 +19,7 @@ export async function getSeason(
       include: {
         participants: { include: { user: true } },
         matches: {
-          include: { player1: true, player2: true },
+          include: { player1: true, player2: true, resultEnteredBy: true },
           orderBy: [{ roundNumber: "asc" }, { id: "asc" }],
         },
       },
@@ -45,6 +45,14 @@ export async function getSeason(
             status: m.status,
             player1: { id: m.player1.id, displayName: m.player1.displayName },
             player2: { id: m.player2.id, displayName: m.player2.displayName },
+            player1Legs: m.player1Legs,
+            player2Legs: m.player2Legs,
+            player1Checkout: m.player1Checkout,
+            player2Checkout: m.player2Checkout,
+            resultEnteredBy: m.resultEnteredBy
+              ? { id: m.resultEnteredBy.id, displayName: m.resultEnteredBy.displayName }
+              : null,
+            resultEnteredAt: m.resultEnteredAt,
           })),
         },
       },
