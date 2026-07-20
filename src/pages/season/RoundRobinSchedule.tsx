@@ -14,7 +14,7 @@ export default function RoundRobinSchedule({ matches, participants, renderMatchA
     <>
       {rounds.map((roundNumber) => {
         const roundMatches = matches.filter((m) => m.roundNumber === roundNumber);
-        const byePlayer = participants.find(
+        const byePlayers = participants.filter(
           (p) => !roundMatches.some((m) => m.player1.id === p.id || m.player2.id === p.id)
         );
 
@@ -33,7 +33,11 @@ export default function RoundRobinSchedule({ matches, participants, renderMatchA
                   </span>
                 </li>
               ))}
-              {byePlayer && <li className="py-2 text-sm text-gray-500">{byePlayer.displayName}: bye</li>}
+              {byePlayers.map((player) => (
+                <li key={`bye-${player.id}`} className="py-2 text-sm text-gray-500">
+                  {player.displayName}: bye
+                </li>
+              ))}
             </ul>
           </div>
         );
