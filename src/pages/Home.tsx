@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { branding } from "../branding";
 import { useAuth } from "../lib/AuthContext";
 
@@ -9,7 +10,12 @@ export default function Home() {
       <img src={branding.logoSrc} alt={branding.appName} width={40} height={40} />
       <h1 className="text-primary font-heading text-3xl font-bold">{branding.appName}</h1>
       {user && (
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          {user.role === "admin" && (
+            <Link to="/admin/members" className="text-primary underline">
+              Manage Members
+            </Link>
+          )}
           <span>{user.displayName}</span>
           <button onClick={() => void logout()} className="text-primary underline">
             Log out
