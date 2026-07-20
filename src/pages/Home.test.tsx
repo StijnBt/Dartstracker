@@ -82,4 +82,19 @@ describe("Home navigation", () => {
     );
     expect(screen.queryByRole("link", { name: "Manage Members" })).not.toBeInTheDocument();
   });
+
+  it("shows a Season link for every logged-in user, admin or player", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: 2, username: "bsmith", role: "player", displayName: "Bob Smith" },
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole("link", { name: "Season" })).toHaveAttribute("href", "/season");
+  });
 });

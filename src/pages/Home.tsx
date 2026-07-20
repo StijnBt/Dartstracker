@@ -11,6 +11,9 @@ export default function Home() {
       <h1 className="text-primary font-heading text-3xl font-bold">{branding.appName}</h1>
       {user && (
         <div className="ml-auto flex items-center gap-3">
+          <Link to="/season" className="text-primary underline">
+            Season
+          </Link>
           {user.role === "admin" && (
             <Link to="/admin/members" className="text-primary underline">
               Manage Members
