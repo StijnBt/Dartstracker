@@ -1,0 +1,43 @@
+import type { ReactNode } from "react";
+import type { SeasonMatch, SeasonParticipantSummary } from "../../lib/api-client";
+
+type RoundRobinScheduleProps = {
+  matches: SeasonMatch[];
+  participants: SeasonParticipantSummary[];
+  renderMatchActions?: (match: SeasonMatch) => ReactNode;
+};
+
+export default function RoundRobinSchedule({ matches, participants, renderMatchActions }: RoundRobinScheduleProps) {
+  const rounds = Array.from(new Set(matches.map((m) => m.roundNumber))).sort((a, b) => a - b);
+
+  return (
+    <>
+      {rounds.map((roundNumber) => {
+        const roundMatches = matches.filter((m) => m.roundNumber === roundNumber);
+        const byePlayer = participants.find(
+          (p) => !roundMatches.some((m) => m.player1.id === p.id || m.player2.id === p.id)
+        );
+
+        return (
+          <div key={roundNumber} className="mb-4">
+            <h2 className="font-heading mb-2 font-semibold">Round {roundNumber}</h2>
+            <ul className="divide-y divide-gray-200">
+              {roundMatches.map((match) => (
+                <li key={match.id} className="flex items-center justify-between py-2">
+                  <span>
+                    {match.player1.displayName} vs {match.player2.displayName}
+                  </span>
+                  <span className="flex items-center gap-2 text-sm text-gray-500">
+                    {renderMatchActions ? renderMatchActions(match) : new Date(match.date).toLocaleDateString()}
+                    {match.status === "cancelled" && <span className="text-red-600">cancelled</span>}
+                  </span>
+                </li>
+              ))}
+              {byePlayer && <li className="py-2 text-sm text-gray-500">{byePlayer.displayName}: bye</li>}
+            </ul>
+          </div>
+        );
+      })}
+    </>
+  );
+}
