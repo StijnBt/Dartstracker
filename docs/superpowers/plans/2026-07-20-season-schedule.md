@@ -98,10 +98,12 @@ model Match {
   createdAt   DateTime @default(now())
 
   season  Season @relation(fields: [seasonId], references: [id])
-  player1 User   @relation("Player1Matches", fields: [player1Id], references: [id])
-  player2 User   @relation("Player2Matches", fields: [player2Id], references: [id])
+  player1 User   @relation("Player1Matches", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player2 User   @relation("Player2Matches", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 ```
+
+Note: `onDelete: NoAction, onUpdate: NoAction` on `player1`/`player2` is required — SQL Server rejects the implicit default (`Cascade`) here because two FKs from `Match` (`player1Id`, `player2Id`) both reference `User`, creating multiple cascade paths (Prisma error P1012). Without these two attributes, `prisma migrate dev` fails schema validation before ever touching the database.
 
 - [ ] **Step 3: Generate and apply the migration**
 
