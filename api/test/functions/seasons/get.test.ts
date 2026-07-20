@@ -51,6 +51,7 @@ describe("getSeason function", () => {
       name: "Spring 2026",
       roundType: "single",
       status: "active",
+      createdAt: new Date(),
       participants: [
         { user: { id: 1, displayName: "Administrator" } },
         { user: { id: 2, displayName: "Bob Smith" } },
@@ -65,7 +66,7 @@ describe("getSeason function", () => {
           player2: { id: 2, displayName: "Bob Smith" },
         },
       ],
-    });
+    } as unknown as Awaited<ReturnType<typeof prisma.season.findUnique>>);
 
     const result = await getSeason(createRequest("1"), createContext());
 

@@ -24,11 +24,13 @@ function createContext(): InvocationContext {
 
 const scheduledMatch = {
   id: 101,
+  seasonId: 1,
   roundNumber: 1,
   date: new Date("2026-08-01"),
   player1Id: 1,
   player2Id: 2,
   status: "scheduled",
+  createdAt: new Date(),
   season: { id: 1, status: "active" },
 };
 
@@ -59,7 +61,7 @@ describe("updateMatch function", () => {
     vi.mocked(prisma.match.findUnique).mockResolvedValue({
       ...scheduledMatch,
       season: { id: 1, status: "archived" },
-    });
+    } as Awaited<ReturnType<typeof prisma.match.findUnique>>);
     const result = await updateMatch(createRequest("101", { status: "cancelled" }), createContext());
     expect(result.status).toBe(400);
     expect(prisma.match.update).not.toHaveBeenCalled();

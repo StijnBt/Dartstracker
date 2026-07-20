@@ -22,7 +22,7 @@ function createContext(): InvocationContext {
   return { log: () => {}, error: () => {} } as unknown as InvocationContext;
 }
 
-const activeSeason = { id: 1, name: "Spring 2026", roundType: "single", status: "active" };
+const activeSeason = { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: new Date() };
 
 describe("archiveSeason function", () => {
   beforeEach(() => {
