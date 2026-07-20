@@ -138,6 +138,27 @@ describe("createSeason function", () => {
       ],
     });
     expect(tx.match.create).toHaveBeenCalledTimes(6);
+    const roundDateByNumber: Record<number, Date> = {
+      1: new Date("2026-08-01"),
+      2: new Date("2026-08-08"),
+      3: new Date("2026-08-15"),
+    };
+    const seenPairs = new Set<string>();
+    for (const [args] of vi.mocked(tx.match.create).mock.calls) {
+      const data = (args as { data: { seasonId: number; roundNumber: number; date: Date; player1Id: number; player2Id: number } }).data;
+      expect(data.seasonId).toBe(10);
+      expect([1, 2, 3]).toContain(data.roundNumber);
+      expect(data.date).toEqual(roundDateByNumber[data.roundNumber]);
+      expect([1, 2, 3, 4]).toContain(data.player1Id);
+      expect([1, 2, 3, 4]).toContain(data.player2Id);
+      expect(data.player1Id).not.toBe(data.player2Id);
+      const pairKey = [data.player1Id, data.player2Id].sort((a, b) => a - b).join("-");
+      expect(seenPairs.has(pairKey)).toBe(false);
+      seenPairs.add(pairKey);
+    }
+    expect(seenPairs).toEqual(
+      new Set(["1-2", "1-3", "1-4", "2-3", "2-4", "3-4"])
+    );
     const body = result.jsonBody as { season: { participants: unknown[]; matches: unknown[] } };
     expect(body.season.participants).toHaveLength(4);
     expect(body.season.matches).toHaveLength(6);
