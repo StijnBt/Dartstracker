@@ -131,6 +131,15 @@ export type UpdateMatchInput = {
   status?: "scheduled" | "cancelled";
 };
 
+export type MatchUpdateResult = {
+  id: number;
+  roundNumber: number;
+  date: string;
+  status: "scheduled" | "cancelled";
+  player1Id: number;
+  player2Id: number;
+};
+
 export async function listSeasons(): Promise<SeasonSummary[]> {
   const response = await fetch("/api/seasons", { credentials: "same-origin" });
   const data = await parseJsonResponse<{ seasons: SeasonSummary[] }>(response);
@@ -165,13 +174,13 @@ export async function archiveSeason(id: number): Promise<Season> {
   return data.season;
 }
 
-export async function updateMatch(id: number, input: UpdateMatchInput): Promise<SeasonMatch> {
+export async function updateMatch(id: number, input: UpdateMatchInput): Promise<MatchUpdateResult> {
   const response = await fetch(`/api/matches/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
     body: JSON.stringify(input),
   });
-  const data = await parseJsonResponse<{ match: SeasonMatch }>(response);
+  const data = await parseJsonResponse<{ match: MatchUpdateResult }>(response);
   return data.match;
 }

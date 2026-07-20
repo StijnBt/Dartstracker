@@ -221,7 +221,7 @@ describe("api-client", () => {
 
   describe("updateMatch", () => {
     it("patches the match and returns it", async () => {
-      const match = { id: 101, roundNumber: 1, date: "2026-08-15", status: "scheduled", player1: { id: 1, displayName: "A" }, player2: { id: 2, displayName: "B" } };
+      const match = { id: 101, roundNumber: 1, date: "2026-08-15", status: "scheduled", player1Id: 1, player2Id: 2 };
       vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ match }), { status: 200 }));
 
       const result = await updateMatch(101, { date: "2026-08-15" });

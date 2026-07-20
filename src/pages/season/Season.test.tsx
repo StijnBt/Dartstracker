@@ -113,7 +113,14 @@ describe("SeasonPage", () => {
       { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
     ]);
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
-    vi.mocked(apiClient.updateMatch).mockResolvedValue({ ...season.matches[0], status: "cancelled" });
+    vi.mocked(apiClient.updateMatch).mockResolvedValue({
+      id: 101,
+      roundNumber: 1,
+      date: "2026-08-01",
+      status: "cancelled",
+      player1Id: 1,
+      player2Id: 2,
+    });
     render(
       <MemoryRouter>
         <SeasonPage />
