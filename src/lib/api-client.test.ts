@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { login, logout, fetchCurrentUser, listMembers, createMember, updateMember } from "./api-client";
+import {
+  login,
+  logout,
+  fetchCurrentUser,
+  listMembers,
+  createMember,
+  updateMember,
+  listSeasons,
+  getSeason,
+  createSeason,
+  archiveSeason,
+  updateMatch,
+} from "./api-client";
 
 describe("api-client", () => {
   beforeEach(() => {
@@ -133,6 +145,96 @@ describe("api-client", () => {
         })
       );
       expect(result).toEqual(user);
+    });
+  });
+
+  describe("listSeasons", () => {
+    it("fetches and returns all seasons", async () => {
+      const seasons = [
+        { id: 2, name: "Summer 2026", roundType: "double", status: "active", createdAt: "2026-06-01T00:00:00.000Z" },
+      ];
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ seasons }), { status: 200 }));
+
+      const result = await listSeasons();
+
+      expect(fetch).toHaveBeenCalledWith("/api/seasons", expect.objectContaining({ credentials: "same-origin" }));
+      expect(result).toEqual(seasons);
+    });
+  });
+
+  describe("getSeason", () => {
+    it("fetches and returns one season", async () => {
+      const season = { id: 1, name: "Spring 2026", roundType: "single", status: "active", participants: [], matches: [] };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ season }), { status: 200 }));
+
+      const result = await getSeason(1);
+
+      expect(fetch).toHaveBeenCalledWith("/api/seasons/1", expect.objectContaining({ credentials: "same-origin" }));
+      expect(result).toEqual(season);
+    });
+  });
+
+  describe("createSeason", () => {
+    it("posts the new season and returns it", async () => {
+      const season = { id: 1, name: "Spring 2026", roundType: "single", status: "active", participants: [], matches: [] };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ season }), { status: 201 }));
+
+      const input = { name: "Spring 2026", roundType: "single" as const, participantIds: [1, 2], roundDates: ["2026-08-01"] };
+      const result = await createSeason(input);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/seasons",
+        expect.objectContaining({ method: "POST", credentials: "same-origin", body: JSON.stringify(input) })
+      );
+      expect(result).toEqual(season);
+    });
+
+    it("throws the server's error message on failure", async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response(JSON.stringify({ error: "A season is already active" }), { status: 409 })
+      );
+
+      await expect(
+        createSeason({ name: "X", roundType: "single", participantIds: [1, 2], roundDates: ["2026-08-01"] })
+      ).rejects.toThrow("A season is already active");
+    });
+  });
+
+  describe("archiveSeason", () => {
+    it("patches the season status to archived", async () => {
+      const season = { id: 1, name: "Spring 2026", roundType: "single", status: "archived", participants: [], matches: [] };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ season }), { status: 200 }));
+
+      const result = await archiveSeason(1);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/seasons/1",
+        expect.objectContaining({
+          method: "PATCH",
+          credentials: "same-origin",
+          body: JSON.stringify({ status: "archived" }),
+        })
+      );
+      expect(result).toEqual(season);
+    });
+  });
+
+  describe("updateMatch", () => {
+    it("patches the match and returns it", async () => {
+      const match = { id: 101, roundNumber: 1, date: "2026-08-15", status: "scheduled", player1Id: 1, player2Id: 2 };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ match }), { status: 200 }));
+
+      const result = await updateMatch(101, { date: "2026-08-15" });
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/matches/101",
+        expect.objectContaining({
+          method: "PATCH",
+          credentials: "same-origin",
+          body: JSON.stringify({ date: "2026-08-15" }),
+        })
+      );
+      expect(result).toEqual(match);
     });
   });
 });

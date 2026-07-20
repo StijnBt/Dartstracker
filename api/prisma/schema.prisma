@@ -14,4 +14,45 @@ model User {
   displayName  String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
+
+  seasonParticipations SeasonParticipant[]
+  player1Matches       Match[]             @relation("Player1Matches")
+  player2Matches       Match[]             @relation("Player2Matches")
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  name      String
+  roundType String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+
+  participants SeasonParticipant[]
+  matches      Match[]
+}
+
+model SeasonParticipant {
+  id       Int @id @default(autoincrement())
+  seasonId Int
+  userId   Int
+
+  season Season @relation(fields: [seasonId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([seasonId, userId])
+}
+
+model Match {
+  id          Int      @id @default(autoincrement())
+  seasonId    Int
+  roundNumber Int
+  date        DateTime
+  player1Id   Int
+  player2Id   Int
+  status      String   @default("scheduled")
+  createdAt   DateTime @default(now())
+
+  season  Season @relation(fields: [seasonId], references: [id])
+  player1 User   @relation("Player1Matches", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player2 User   @relation("Player2Matches", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

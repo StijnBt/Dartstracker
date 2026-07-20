@@ -87,3 +87,100 @@ export async function updateMember(id: number, input: UpdateMemberInput): Promis
   const data = await parseJsonResponse<{ user: Member }>(response);
   return data.user;
 }
+
+export type SeasonParticipantSummary = {
+  id: number;
+  displayName: string;
+};
+
+export type SeasonMatch = {
+  id: number;
+  roundNumber: number;
+  date: string;
+  status: "scheduled" | "cancelled";
+  player1: SeasonParticipantSummary;
+  player2: SeasonParticipantSummary;
+};
+
+export type Season = {
+  id: number;
+  name: string;
+  roundType: "single" | "double";
+  status: "active" | "archived";
+  participants: SeasonParticipantSummary[];
+  matches: SeasonMatch[];
+};
+
+export type SeasonSummary = {
+  id: number;
+  name: string;
+  roundType: "single" | "double";
+  status: "active" | "archived";
+  createdAt: string;
+};
+
+export type CreateSeasonInput = {
+  name: string;
+  roundType: "single" | "double";
+  participantIds: number[];
+  roundDates: string[];
+};
+
+export type UpdateMatchInput = {
+  date?: string;
+  status?: "scheduled" | "cancelled";
+};
+
+export type MatchUpdateResult = {
+  id: number;
+  roundNumber: number;
+  date: string;
+  status: "scheduled" | "cancelled";
+  player1Id: number;
+  player2Id: number;
+};
+
+export async function listSeasons(): Promise<SeasonSummary[]> {
+  const response = await fetch("/api/seasons", { credentials: "same-origin" });
+  const data = await parseJsonResponse<{ seasons: SeasonSummary[] }>(response);
+  return data.seasons;
+}
+
+export async function getSeason(id: number): Promise<Season> {
+  const response = await fetch(`/api/seasons/${id}`, { credentials: "same-origin" });
+  const data = await parseJsonResponse<{ season: Season }>(response);
+  return data.season;
+}
+
+export async function createSeason(input: CreateSeasonInput): Promise<Season> {
+  const response = await fetch("/api/seasons", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ season: Season }>(response);
+  return data.season;
+}
+
+export async function archiveSeason(id: number): Promise<Season> {
+  const response = await fetch(`/api/seasons/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ status: "archived" }),
+  });
+  const data = await parseJsonResponse<{ season: Season }>(response);
+  return data.season;
+}
+
+export async function updateMatch(id: number, input: UpdateMatchInput): Promise<MatchUpdateResult> {
+  const response = await fetch(`/api/matches/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ match: MatchUpdateResult }>(response);
+  return data.match;
+}
