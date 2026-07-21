@@ -97,7 +97,7 @@ export type SeasonMatch = {
   id: number;
   roundNumber: number;
   date: string;
-  status: "scheduled" | "cancelled" | "played";
+  status: "scheduled" | "cancelled" | "played" | "in_progress";
   player1: SeasonParticipantSummary;
   player2: SeasonParticipantSummary;
   player1Legs: number | null;
@@ -141,7 +141,7 @@ export type MatchUpdateResult = {
   id: number;
   roundNumber: number;
   date: string;
-  status: "scheduled" | "cancelled" | "played";
+  status: "scheduled" | "cancelled" | "played" | "in_progress";
   player1Id: number;
   player2Id: number;
 };
@@ -219,4 +219,85 @@ export async function submitMatchResult(
   });
   const data = await parseJsonResponse<{ match: SubmitMatchResultResponse }>(response);
   return data.match;
+}
+
+export type LiveMultiplier = "single" | "double" | "triple";
+
+export type LiveThrow = {
+  id: number;
+  turnNumber: number;
+  dartNumber: number;
+  playerId: number;
+  multiplier: LiveMultiplier;
+  segment: number;
+  value: number;
+  busted: boolean;
+};
+
+export type LiveLeg = {
+  id: number;
+  legNumber: number;
+  startingPlayerId: number;
+  winnerPlayerId: number | null;
+  checkoutValue: number | null;
+  throws: LiveThrow[];
+};
+
+export type LiveCurrentTurn = {
+  legNumber: number;
+  turnNumber: number;
+  dartNumber: number;
+  playerId: number;
+  player1Remaining: number;
+  player2Remaining: number;
+};
+
+export type LiveMatchOutcome = {
+  complete: boolean;
+  winnerPlayerId: number | null;
+  player1Legs: number;
+  player2Legs: number;
+  player1Checkout: number | null;
+  player2Checkout: number | null;
+};
+
+export type LiveMatchState = {
+  match: { id: number; status: string; player1Id: number; player2Id: number };
+  legs: LiveLeg[];
+  currentTurn: LiveCurrentTurn | null;
+  matchOutcome: LiveMatchOutcome;
+};
+
+export async function startLiveMatch(id: number): Promise<LiveMatchState> {
+  const response = await fetch(`/api/matches/${id}/live/start`, {
+    method: "POST",
+    credentials: "same-origin",
+  });
+  return parseJsonResponse<LiveMatchState>(response);
+}
+
+export async function getLiveMatch(id: number): Promise<LiveMatchState> {
+  const response = await fetch(`/api/matches/${id}/live`, { credentials: "same-origin" });
+  return parseJsonResponse<LiveMatchState>(response);
+}
+
+export async function recordLiveThrow(
+  id: number,
+  input: { multiplier: LiveMultiplier; segment: number }
+): Promise<LiveMatchState> {
+  const response = await fetch(`/api/matches/${id}/live/throws`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  return parseJsonResponse<LiveMatchState>(response);
+}
+
+export async function undoLiveThrow(id: number): Promise<LiveMatchState> {
+  const response = await fetch(`/api/matches/${id}/live/throws/undo`, {
+    method: "POST",
+    credentials: "same-origin",
+  });
+  return parseJsonResponse<LiveMatchState>(response);
 }
