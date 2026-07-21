@@ -12,6 +12,7 @@ import NewSeason from "./pages/season/NewSeason";
 import SeasonArchive from "./pages/season/SeasonArchive";
 import SeasonDetail from "./pages/season/SeasonDetail";
 import MatchResult from "./pages/season/MatchResult";
+import LiveScoring from "./pages/season/LiveScoring";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/season" element={<SeasonPage />} />
             <Route path="/season/matches/:id/result" element={<MatchResult />} />
+            <Route path="/season/matches/:id/live" element={<LiveScoring />} />
             <Route path="/seasons" element={<SeasonArchive />} />
             <Route path="/seasons/:id" element={<SeasonDetail />} />
           </Route>
