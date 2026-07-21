@@ -25,15 +25,18 @@ export async function undoLiveThrow(request: HttpRequest, context: InvocationCon
       return { status: 400, jsonBody: { error: "Cannot modify a match in an archived season" } };
     }
 
-    const lastThrow = await prisma.throw.findFirst({ where: { leg: { matchId } }, orderBy: { id: "desc" } });
-    if (!lastThrow) {
-      return { status: 400, jsonBody: { error: "Nothing to undo" } };
-    }
-
     const result = await prisma.$transaction(async (tx) => {
+      const lastThrow = await tx.throw.findFirst({ where: { leg: { matchId } }, orderBy: { id: "desc" } });
+      if (!lastThrow) {
+        return null;
+      }
       await tx.throw.delete({ where: { id: lastThrow.id } });
       return reconcileMatchState(tx, matchId, existing.player1Id, existing.player2Id, claims.userId);
     });
+
+    if (!result) {
+      return { status: 400, jsonBody: { error: "Nothing to undo" } };
+    }
 
     return {
       status: 200,
