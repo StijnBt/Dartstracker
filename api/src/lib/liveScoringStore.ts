@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { replayMatch, type Multiplier, type ReplayOutcome, type StoredLeg } from "./liveScoring";
 
-export async function loadLegsWithThrows(client: PrismaClient, matchId: number): Promise<StoredLeg[]> {
+export async function loadLegsWithThrows(client: Prisma.TransactionClient, matchId: number): Promise<StoredLeg[]> {
   const legs = await client.leg.findMany({
     where: { matchId },
     orderBy: { legNumber: "asc" },
@@ -24,7 +24,7 @@ export async function loadLegsWithThrows(client: PrismaClient, matchId: number):
   }));
 }
 
-async function applyOutcome(tx: PrismaClient, outcome: ReplayOutcome): Promise<void> {
+async function applyOutcome(tx: Prisma.TransactionClient, outcome: ReplayOutcome): Promise<void> {
   for (const legResult of outcome.legResults) {
     for (const bustUpdate of legResult.bustUpdates) {
       await tx.throw.update({ where: { id: bustUpdate.throwId }, data: { busted: bustUpdate.busted } });
@@ -37,7 +37,7 @@ async function applyOutcome(tx: PrismaClient, outcome: ReplayOutcome): Promise<v
 }
 
 export async function reconcileMatchState(
-  tx: PrismaClient,
+  tx: Prisma.TransactionClient,
   matchId: number,
   player1Id: number,
   player2Id: number,
