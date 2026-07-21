@@ -86,6 +86,7 @@ describe("startLiveMatch function", () => {
     const result = await startLiveMatch(createRequest("101"), createContext());
 
     expect(tx.leg.create).toHaveBeenCalledWith({ data: { matchId: 101, legNumber: 1, startingPlayerId: 1 } });
+    expect(tx.match.update).toHaveBeenCalledWith({ where: { id: 101 }, data: { status: "in_progress" } });
     expect(result.status).toBe(200);
     const body = result.jsonBody as { match: { status: string } };
     expect(body.match.status).toBe("in_progress");
