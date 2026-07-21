@@ -19,6 +19,9 @@ model User {
   player1Matches       Match[]             @relation("Player1Matches")
   player2Matches       Match[]             @relation("Player2Matches")
   resultEnteredMatches Match[]             @relation("MatchResultEnteredBy")
+  legsStarted          Leg[]               @relation("LegStartingPlayer")
+  legsWon              Leg[]               @relation("LegWinner")
+  throwsRecorded       Throw[]             @relation("ThrowPlayer")
 }
 
 model Season {
@@ -64,4 +67,38 @@ model Match {
   player1         User   @relation("Player1Matches", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   player2         User   @relation("Player2Matches", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   resultEnteredBy User?  @relation("MatchResultEnteredBy", fields: [resultEnteredById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  legs            Leg[]
+}
+
+model Leg {
+  id               Int      @id @default(autoincrement())
+  matchId          Int
+  legNumber        Int
+  startingPlayerId Int
+  winnerPlayerId   Int?
+  checkoutValue    Int?
+  createdAt        DateTime @default(now())
+
+  match          Match  @relation(fields: [matchId], references: [id])
+  startingPlayer User   @relation("LegStartingPlayer", fields: [startingPlayerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  winnerPlayer   User?  @relation("LegWinner", fields: [winnerPlayerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  throws         Throw[]
+
+  @@unique([matchId, legNumber])
+}
+
+model Throw {
+  id         Int      @id @default(autoincrement())
+  legId      Int
+  playerId   Int
+  turnNumber Int
+  dartNumber Int
+  multiplier String
+  segment    Int
+  value      Int
+  busted     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  leg    Leg  @relation(fields: [legId], references: [id])
+  player User @relation("ThrowPlayer", fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

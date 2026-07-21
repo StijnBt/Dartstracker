@@ -111,6 +111,11 @@ export default function SeasonPage() {
                   </button>
                 </>
               )}
+              {(match.status === "scheduled" || match.status === "in_progress") && (
+                <Link to={`/season/matches/${match.id}/live`} className="text-primary underline">
+                  {match.status === "in_progress" ? "Resume Live" : "Start Live"}
+                </Link>
+              )}
               <Link to={`/season/matches/${match.id}/result`} className="text-primary underline">
                 {match.status === "played" ? "Edit Result" : "Enter Result"}
               </Link>

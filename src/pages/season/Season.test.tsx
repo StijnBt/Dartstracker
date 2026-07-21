@@ -143,6 +143,58 @@ describe("SeasonPage", () => {
     );
   });
 
+  it("shows a Start Live link for a scheduled match, alongside Enter Result", async () => {
+    mockParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.getByRole("link", { name: "Start Live" })).toHaveAttribute("href", "/season/matches/101/live");
+  });
+
+  it("shows a Resume Live link for an in_progress match", async () => {
+    mockParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "in_progress" }],
+    });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.getByRole("link", { name: "Resume Live" })).toHaveAttribute("href", "/season/matches/101/live");
+  });
+
+  it("shows no live-scoring link once a match is played", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1 }],
+    });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.queryByRole("link", { name: "Start Live" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Resume Live" })).not.toBeInTheDocument();
+  });
+
   it("shows Edit Result instead of Enter Result once a match is played", async () => {
     mockAdmin();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([
