@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
 import { listSeasons, getSeason, archiveSeason, updateMatch, type Season, type SeasonMatch } from "../../lib/api-client";
-import RoundRobinSchedule from "./RoundRobinSchedule";
+import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
 
 export default function SeasonPage() {
   const { user } = useAuth();
@@ -87,9 +87,17 @@ export default function SeasonPage() {
       <RoundRobinSchedule
         matches={season.matches}
         participants={season.participants}
-        renderMatchActions={
-          user?.role === "admin"
-            ? (match) => (
+        renderMatchActions={(match) => {
+          const canRecordResult =
+            !!user && (user.role === "admin" || user.id === match.player1.id || user.id === match.player2.id);
+
+          if (!canRecordResult) {
+            return formatMatchSummary(match);
+          }
+
+          return (
+            <>
+              {user?.role === "admin" && (
                 <>
                   <input
                     type="date"
@@ -102,9 +110,13 @@ export default function SeasonPage() {
                     {match.status === "cancelled" ? "Restore" : "Cancel"}
                   </button>
                 </>
-              )
-            : undefined
-        }
+              )}
+              <Link to={`/season/matches/${match.id}/result`} className="text-primary underline">
+                {match.status === "played" ? "Edit Result" : "Enter Result"}
+              </Link>
+            </>
+          );
+        }}
       />
     </div>
   );

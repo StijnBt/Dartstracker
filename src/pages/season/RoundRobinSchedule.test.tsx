@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import RoundRobinSchedule from "./RoundRobinSchedule";
+import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
 import type { SeasonMatch, SeasonParticipantSummary } from "../../lib/api-client";
 
 const participants: SeasonParticipantSummary[] = [
@@ -8,6 +8,15 @@ const participants: SeasonParticipantSummary[] = [
   { id: 2, displayName: "Bob Smith" },
   { id: 3, displayName: "Carol Smith" },
 ];
+
+const noResult = {
+  player1Legs: null,
+  player2Legs: null,
+  player1Checkout: null,
+  player2Checkout: null,
+  resultEnteredBy: null,
+  resultEnteredAt: null,
+} as const;
 
 const matches: SeasonMatch[] = [
   {
@@ -17,6 +26,7 @@ const matches: SeasonMatch[] = [
     status: "scheduled",
     player1: { id: 1, displayName: "Administrator" },
     player2: { id: 2, displayName: "Bob Smith" },
+    ...noResult,
   },
   {
     id: 102,
@@ -25,6 +35,7 @@ const matches: SeasonMatch[] = [
     status: "cancelled",
     player1: { id: 1, displayName: "Administrator" },
     player2: { id: 3, displayName: "Carol Smith" },
+    ...noResult,
   },
 ];
 
@@ -52,9 +63,16 @@ describe("RoundRobinSchedule", () => {
     expect(screen.getByText("cancelled")).toBeInTheDocument();
   });
 
-  it("renders the formatted date by default", () => {
+  it("renders the formatted date by default for a scheduled match", () => {
     render(<RoundRobinSchedule matches={[matches[0]]} participants={participants} />);
     expect(screen.getByText(new Date("2026-08-01").toLocaleDateString())).toBeInTheDocument();
+  });
+
+  it("renders the final score instead of the date for a played match", () => {
+    const playedMatch: SeasonMatch = { ...matches[0], status: "played", player1Legs: 3, player2Legs: 1 };
+    render(<RoundRobinSchedule matches={[playedMatch]} participants={participants} />);
+    expect(screen.getByText("3–1")).toBeInTheDocument();
+    expect(screen.queryByText(new Date("2026-08-01").toLocaleDateString())).not.toBeInTheDocument();
   });
 
   it("renders custom match actions when provided instead of the date", () => {
@@ -77,7 +95,6 @@ describe("RoundRobinSchedule", () => {
       { id: 4, displayName: "Dave" },
       { id: 5, displayName: "Eve" },
     ];
-    // Round 1: only 1 match involving 2 participants, 3 participants are idle (but 2+ will be rendered as byes)
     const oneMatchPerRound: SeasonMatch[] = [
       {
         id: 201,
@@ -86,10 +103,10 @@ describe("RoundRobinSchedule", () => {
         status: "scheduled",
         player1: { id: 1, displayName: "Alice" },
         player2: { id: 2, displayName: "Bob" },
+        ...noResult,
       },
     ];
     render(<RoundRobinSchedule matches={oneMatchPerRound} participants={fiveParticipants} />);
-    // Carol, Dave, and Eve should all have byes
     expect(screen.getByText("Carol: bye")).toBeInTheDocument();
     expect(screen.getByText("Dave: bye")).toBeInTheDocument();
     expect(screen.getByText("Eve: bye")).toBeInTheDocument();
@@ -102,7 +119,6 @@ describe("RoundRobinSchedule", () => {
       { id: 3, displayName: "Carol" },
       { id: 4, displayName: "Dave" },
     ];
-    // Round 1: 2 matches covering all 4 participants
     const allMatchesRound: SeasonMatch[] = [
       {
         id: 301,
@@ -111,6 +127,7 @@ describe("RoundRobinSchedule", () => {
         status: "scheduled",
         player1: { id: 1, displayName: "Alice" },
         player2: { id: 2, displayName: "Bob" },
+        ...noResult,
       },
       {
         id: 302,
@@ -119,10 +136,15 @@ describe("RoundRobinSchedule", () => {
         status: "scheduled",
         player1: { id: 3, displayName: "Carol" },
         player2: { id: 4, displayName: "Dave" },
+        ...noResult,
       },
     ];
     render(<RoundRobinSchedule matches={allMatchesRound} participants={fourParticipants} />);
-    // No bye text should be rendered for this round
     expect(screen.queryByText(/: bye$/)).not.toBeInTheDocument();
+  });
+
+  it("formatMatchSummary returns the score for a played match and the date otherwise", () => {
+    expect(formatMatchSummary({ ...matches[0], status: "played", player1Legs: 3, player2Legs: 0 })).toBe("3–0");
+    expect(formatMatchSummary(matches[0])).toBe(new Date("2026-08-01").toLocaleDateString());
   });
 });

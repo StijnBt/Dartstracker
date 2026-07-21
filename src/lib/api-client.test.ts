@@ -11,6 +11,7 @@ import {
   createSeason,
   archiveSeason,
   updateMatch,
+  submitMatchResult,
 } from "./api-client";
 
 describe("api-client", () => {
@@ -235,6 +236,51 @@ describe("api-client", () => {
         })
       );
       expect(result).toEqual(match);
+    });
+  });
+
+  describe("submitMatchResult", () => {
+    it("posts the result and returns the updated match", async () => {
+      const match = {
+        id: 101,
+        roundNumber: 1,
+        date: "2026-08-01",
+        status: "played",
+        player1Id: 1,
+        player2Id: 2,
+        player1Legs: 3,
+        player2Legs: 1,
+        player1Checkout: 82,
+        player2Checkout: null,
+        resultEnteredBy: { id: 1, displayName: "Administrator" },
+        resultEnteredAt: "2026-08-01T20:00:00.000Z",
+      };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ match }), { status: 200 }));
+
+      const result = await submitMatchResult(101, { player1Legs: 3, player2Legs: 1, player1Checkout: 82 });
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/matches/101/result",
+        expect.objectContaining({
+          method: "PATCH",
+          credentials: "same-origin",
+          body: JSON.stringify({ player1Legs: 3, player2Legs: 1, player1Checkout: 82 }),
+        })
+      );
+      expect(result).toEqual(match);
+    });
+
+    it("throws the server's error message on failure", async () => {
+      vi.mocked(fetch).mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: "One player must win exactly 3 legs; the other must have 0-2 legs" }),
+          { status: 400 }
+        )
+      );
+
+      await expect(submitMatchResult(101, { player1Legs: 3, player2Legs: 3 })).rejects.toThrow(
+        "One player must win exactly 3 legs; the other must have 0-2 legs"
+      );
     });
   });
 });

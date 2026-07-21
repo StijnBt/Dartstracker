@@ -31,6 +31,12 @@ const scheduledMatch = {
   player2Id: 2,
   status: "scheduled",
   createdAt: new Date(),
+  player1Legs: null,
+  player2Legs: null,
+  player1Checkout: null,
+  player2Checkout: null,
+  resultEnteredById: null,
+  resultEnteredAt: null,
   season: { id: 1, status: "active" },
 };
 

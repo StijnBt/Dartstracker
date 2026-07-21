@@ -19,6 +19,7 @@ const season: apiClient.Season = {
   participants: [
     { id: 1, displayName: "Administrator" },
     { id: 2, displayName: "Bob Smith" },
+    { id: 3, displayName: "Carol Jones" },
   ],
   matches: [
     {
@@ -28,11 +29,26 @@ const season: apiClient.Season = {
       status: "scheduled",
       player1: { id: 1, displayName: "Administrator" },
       player2: { id: 2, displayName: "Bob Smith" },
+      player1Legs: null,
+      player2Legs: null,
+      player1Checkout: null,
+      player2Checkout: null,
+      resultEnteredBy: null,
+      resultEnteredAt: null,
     },
   ],
 };
 
-function mockPlayer() {
+function mockNonParticipant() {
+  vi.mocked(useAuth).mockReturnValue({
+    user: { id: 3, username: "cjones", role: "player", displayName: "Carol Jones" },
+    loading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+  });
+}
+
+function mockParticipant() {
   vi.mocked(useAuth).mockReturnValue({
     user: { id: 2, username: "bsmith", role: "player", displayName: "Bob Smith" },
     loading: false,
@@ -52,7 +68,7 @@ function mockAdmin() {
 
 describe("SeasonPage", () => {
   it("shows an empty state with no Create Season link for a player when there is no active season", async () => {
-    mockPlayer();
+    mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([]);
     render(
       <MemoryRouter>
@@ -77,7 +93,7 @@ describe("SeasonPage", () => {
   });
 
   it("renders the active season's schedule", async () => {
-    mockPlayer();
+    mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([
       { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
     ]);
@@ -91,8 +107,8 @@ describe("SeasonPage", () => {
     expect(screen.getByText("Administrator vs Bob Smith")).toBeInTheDocument();
   });
 
-  it("does not show reschedule/cancel controls or Archive Season for a player", async () => {
-    mockPlayer();
+  it("shows no controls, not even Enter Result, for a non-participant player", async () => {
+    mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([
       { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
     ]);
@@ -105,6 +121,44 @@ describe("SeasonPage", () => {
     await waitFor(() => screen.getByText("Spring 2026"));
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Archive Season" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Enter Result" })).not.toBeInTheDocument();
+  });
+
+  it("shows only an Enter Result link, no reschedule/cancel, for a non-admin participant", async () => {
+    mockParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Enter Result" })).toHaveAttribute(
+      "href",
+      "/season/matches/101/result"
+    );
+  });
+
+  it("shows Edit Result instead of Enter Result once a match is played", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1 }],
+    });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.getByRole("link", { name: "Edit Result" })).toBeInTheDocument();
   });
 
   it("cancels a match when the admin clicks Cancel", async () => {

@@ -35,6 +35,12 @@ describe("SeasonDetail", () => {
           status: "scheduled",
           player1: { id: 1, displayName: "Administrator" },
           player2: { id: 2, displayName: "Bob Smith" },
+          player1Legs: null,
+          player2Legs: null,
+          player1Checkout: null,
+          player2Checkout: null,
+          resultEnteredBy: null,
+          resultEnteredAt: null,
         },
       ],
     });

@@ -97,9 +97,15 @@ export type SeasonMatch = {
   id: number;
   roundNumber: number;
   date: string;
-  status: "scheduled" | "cancelled";
+  status: "scheduled" | "cancelled" | "played";
   player1: SeasonParticipantSummary;
   player2: SeasonParticipantSummary;
+  player1Legs: number | null;
+  player2Legs: number | null;
+  player1Checkout: number | null;
+  player2Checkout: number | null;
+  resultEnteredBy: SeasonParticipantSummary | null;
+  resultEnteredAt: string | null;
 };
 
 export type Season = {
@@ -135,9 +141,18 @@ export type MatchUpdateResult = {
   id: number;
   roundNumber: number;
   date: string;
-  status: "scheduled" | "cancelled";
+  status: "scheduled" | "cancelled" | "played";
   player1Id: number;
   player2Id: number;
+};
+
+export type SubmitMatchResultResponse = MatchUpdateResult & {
+  player1Legs: number | null;
+  player2Legs: number | null;
+  player1Checkout: number | null;
+  player2Checkout: number | null;
+  resultEnteredBy: SeasonParticipantSummary | null;
+  resultEnteredAt: string | null;
 };
 
 export async function listSeasons(): Promise<SeasonSummary[]> {
@@ -182,5 +197,26 @@ export async function updateMatch(id: number, input: UpdateMatchInput): Promise<
     body: JSON.stringify(input),
   });
   const data = await parseJsonResponse<{ match: MatchUpdateResult }>(response);
+  return data.match;
+}
+
+export type SubmitMatchResultInput = {
+  player1Legs: number;
+  player2Legs: number;
+  player1Checkout?: number;
+  player2Checkout?: number;
+};
+
+export async function submitMatchResult(
+  id: number,
+  input: SubmitMatchResultInput
+): Promise<SubmitMatchResultResponse> {
+  const response = await fetch(`/api/matches/${id}/result`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ match: SubmitMatchResultResponse }>(response);
   return data.match;
 }

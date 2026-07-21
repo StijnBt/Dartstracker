@@ -18,6 +18,7 @@ model User {
   seasonParticipations SeasonParticipant[]
   player1Matches       Match[]             @relation("Player1Matches")
   player2Matches       Match[]             @relation("Player2Matches")
+  resultEnteredMatches Match[]             @relation("MatchResultEnteredBy")
 }
 
 model Season {
@@ -52,7 +53,15 @@ model Match {
   status      String   @default("scheduled")
   createdAt   DateTime @default(now())
 
-  season  Season @relation(fields: [seasonId], references: [id])
-  player1 User   @relation("Player1Matches", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  player2 User   @relation("Player2Matches", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player1Legs       Int?
+  player2Legs       Int?
+  player1Checkout   Int?
+  player2Checkout   Int?
+  resultEnteredById Int?
+  resultEnteredAt   DateTime?
+
+  season          Season @relation(fields: [seasonId], references: [id])
+  player1         User   @relation("Player1Matches", fields: [player1Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  player2         User   @relation("Player2Matches", fields: [player2Id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resultEnteredBy User?  @relation("MatchResultEnteredBy", fields: [resultEnteredById], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
