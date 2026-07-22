@@ -213,6 +213,31 @@ export async function updateMatch(id: number, input: UpdateMatchInput): Promise<
   return data.match;
 }
 
+export type AddMatchInput = {
+  date: string;
+  player1Id: number;
+  player2Id: number;
+};
+
+export async function addMatch(seasonId: number, input: AddMatchInput): Promise<SeasonMatch> {
+  const response = await fetch(`/api/seasons/${seasonId}/matches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ match: SeasonMatch }>(response);
+  return data.match;
+}
+
+export async function deleteMatch(id: number): Promise<void> {
+  const response = await fetch(`/api/matches/${id}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  await parseJsonResponse<{ success: boolean }>(response);
+}
+
 export type SubmitMatchResultInput = {
   player1Legs: number;
   player2Legs: number;
