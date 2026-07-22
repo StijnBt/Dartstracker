@@ -68,6 +68,7 @@ function mockAdmin() {
 
 describe("SeasonPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(apiClient.getSeasonStats).mockResolvedValue([]);
   });
 
@@ -327,5 +328,126 @@ describe("SeasonPage", () => {
     await waitFor(() => {
       expect(apiClient.archiveSeason).toHaveBeenCalledWith(1);
     });
+  });
+
+  it("shows an Add Match form for an admin, hidden for a non-admin", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.getByRole("heading", { name: "Add Match" })).toBeInTheDocument();
+  });
+
+  it("hides the Add Match form for a non-admin participant", async () => {
+    mockParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+    expect(screen.queryByRole("heading", { name: "Add Match" })).not.toBeInTheDocument();
+  });
+
+  it("adds a match with the form and reloads", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    vi.mocked(apiClient.addMatch).mockResolvedValue({ ...season.matches[0], id: 999, roundNumber: 0 });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.type(screen.getByLabelText("New match date"), "2026-09-01");
+    await userEvent.selectOptions(screen.getByLabelText("Player 1"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Player 2"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Add Match" }));
+
+    await waitFor(() => {
+      expect(apiClient.addMatch).toHaveBeenCalledWith(1, { date: "2026-09-01", player1Id: 1, player2Id: 2 });
+    });
+    expect(apiClient.getSeason).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a selection checkbox per match for an admin, and a disabled Delete Selected button with none selected", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    expect(screen.getByRole("button", { name: "Delete Selected (0)" })).toBeDisabled();
+    expect(screen.getByLabelText("Select Administrator vs Bob Smith")).toBeInTheDocument();
+  });
+
+  it("deletes the selected matches after confirmation and reloads", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    vi.mocked(apiClient.deleteMatch).mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByLabelText("Select Administrator vs Bob Smith"));
+    await userEvent.click(screen.getByRole("button", { name: "Delete Selected (1)" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("1 match"));
+    await waitFor(() => {
+      expect(apiClient.deleteMatch).toHaveBeenCalledWith(101);
+    });
+    expect(apiClient.getSeason).toHaveBeenCalledTimes(2);
+  });
+
+  it("warns about lost results/throw history when a selected match has already been played", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1 }],
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByLabelText("Select Administrator vs Bob Smith"));
+    await userEvent.click(screen.getByRole("button", { name: "Delete Selected (1)" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("permanently lost"));
+    expect(apiClient.deleteMatch).not.toHaveBeenCalled();
   });
 });

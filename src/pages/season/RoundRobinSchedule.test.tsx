@@ -143,6 +143,43 @@ describe("RoundRobinSchedule", () => {
     expect(screen.queryByText(/: bye$/)).not.toBeInTheDocument();
   });
 
+  it("renders roundNumber 0 matches under an Additional Matches heading, separate from round groups", () => {
+    const additionalMatch: SeasonMatch = {
+      id: 401,
+      roundNumber: 0,
+      date: "2026-09-01",
+      status: "scheduled",
+      player1: { id: 2, displayName: "Bob Smith" },
+      player2: { id: 3, displayName: "Carol Smith" },
+      ...noResult,
+    };
+    render(<RoundRobinSchedule matches={[...matches, additionalMatch]} participants={participants} />);
+
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual(["Round 1", "Round 2", "Additional Matches"]);
+    expect(screen.getByText("Bob Smith vs Carol Smith")).toBeInTheDocument();
+  });
+
+  it("does not compute byes for the Additional Matches section", () => {
+    const additionalMatch: SeasonMatch = {
+      id: 401,
+      roundNumber: 0,
+      date: "2026-09-01",
+      status: "scheduled",
+      player1: { id: 1, displayName: "Administrator" },
+      player2: { id: 2, displayName: "Bob Smith" },
+      ...noResult,
+    };
+    render(<RoundRobinSchedule matches={[additionalMatch]} participants={participants} />);
+
+    expect(screen.queryByText(/: bye$/)).not.toBeInTheDocument();
+  });
+
+  it("omits the Additional Matches heading when there are no roundNumber 0 matches", () => {
+    render(<RoundRobinSchedule matches={matches} participants={participants} />);
+    expect(screen.queryByText("Additional Matches")).not.toBeInTheDocument();
+  });
+
   it("formatMatchSummary returns the score for a played match and the date otherwise", () => {
     expect(formatMatchSummary({ ...matches[0], status: "played", player1Legs: 3, player2Legs: 0 })).toBe("3–0");
     expect(formatMatchSummary(matches[0])).toBe(new Date("2026-08-01").toLocaleDateString());

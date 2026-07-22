@@ -12,6 +12,8 @@ import {
   createSeason,
   archiveSeason,
   updateMatch,
+  addMatch,
+  deleteMatch,
   submitMatchResult,
 } from "./api-client";
 
@@ -252,6 +254,52 @@ describe("api-client", () => {
         })
       );
       expect(result).toEqual(match);
+    });
+  });
+
+  describe("addMatch", () => {
+    it("posts the new match and returns it", async () => {
+      const match = {
+        id: 501,
+        roundNumber: 0,
+        date: "2026-08-15",
+        status: "scheduled",
+        player1: { id: 1, displayName: "Administrator" },
+        player2: { id: 2, displayName: "Bob Smith" },
+        player1Legs: null,
+        player2Legs: null,
+        player1Checkout: null,
+        player2Checkout: null,
+        resultEnteredBy: null,
+        resultEnteredAt: null,
+      };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ match }), { status: 201 }));
+
+      const input = { date: "2026-08-15", player1Id: 1, player2Id: 2 };
+      const result = await addMatch(1, input);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/seasons/1/matches",
+        expect.objectContaining({
+          method: "POST",
+          credentials: "same-origin",
+          body: JSON.stringify(input),
+        })
+      );
+      expect(result).toEqual(match);
+    });
+  });
+
+  describe("deleteMatch", () => {
+    it("sends a DELETE request for the match", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      await deleteMatch(101);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/matches/101",
+        expect.objectContaining({ method: "DELETE", credentials: "same-origin" })
+      );
     });
   });
 
