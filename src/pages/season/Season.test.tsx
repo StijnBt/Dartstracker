@@ -107,6 +107,27 @@ describe("SeasonPage", () => {
     expect(screen.getByText("Administrator vs Bob Smith")).toBeInTheDocument();
   });
 
+  it("renders a standings table computed from the season's matches", async () => {
+    mockNonParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1 }],
+    });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    expect(screen.getByText("Legs Won")).toBeInTheDocument();
+    const administratorRow = screen.getByText("Administrator").closest("tr")!;
+    expect(administratorRow).toHaveTextContent("3");
+  });
+
   it("shows no controls, not even Enter Result, for a non-participant player", async () => {
     mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([

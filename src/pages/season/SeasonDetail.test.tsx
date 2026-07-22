@@ -52,6 +52,42 @@ describe("SeasonDetail", () => {
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
 
+  it("renders a standings table computed from the season's matches", async () => {
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      id: 1,
+      name: "Winter 2025",
+      roundType: "single",
+      status: "archived",
+      participants: [
+        { id: 1, displayName: "Administrator" },
+        { id: 2, displayName: "Bob Smith" },
+      ],
+      matches: [
+        {
+          id: 101,
+          roundNumber: 1,
+          date: "2025-12-01",
+          status: "played",
+          player1: { id: 1, displayName: "Administrator" },
+          player2: { id: 2, displayName: "Bob Smith" },
+          player1Legs: 3,
+          player2Legs: 0,
+          player1Checkout: null,
+          player2Checkout: null,
+          resultEnteredBy: null,
+          resultEnteredAt: null,
+        },
+      ],
+    });
+
+    renderWithRouter("1");
+
+    await waitFor(() => expect(screen.getByText("Winter 2025")).toBeInTheDocument());
+    expect(screen.getByText("Legs Won")).toBeInTheDocument();
+    const administratorRow = screen.getByText("Administrator").closest("tr")!;
+    expect(administratorRow).toHaveTextContent("3");
+  });
+
   it("shows an error message when the season doesn't exist", async () => {
     vi.mocked(apiClient.getSeason).mockRejectedValue(new Error("Season not found"));
 
