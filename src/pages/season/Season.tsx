@@ -7,6 +7,8 @@ import {
   getSeasonStats,
   archiveSeason,
   updateMatch,
+  addMatch,
+  deleteMatch,
   type Season,
   type SeasonMatch,
   type SeasonPlayerStat,
@@ -24,6 +26,10 @@ export default function SeasonPage() {
   const [stats, setStats] = useState<SeasonPlayerStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addMatchDate, setAddMatchDate] = useState("");
+  const [addMatchPlayer1Id, setAddMatchPlayer1Id] = useState<number | "">("");
+  const [addMatchPlayer2Id, setAddMatchPlayer2Id] = useState<number | "">("");
+  const [selectedMatchIds, setSelectedMatchIds] = useState<Set<number>>(new Set());
 
   async function load() {
     setLoading(true);
@@ -62,6 +68,40 @@ export default function SeasonPage() {
 
   async function handleToggleStatus(match: SeasonMatch) {
     await updateMatch(match.id, { status: match.status === "cancelled" ? "scheduled" : "cancelled" });
+    void load();
+  }
+
+  async function handleAddMatch() {
+    if (!season || !addMatchDate || addMatchPlayer1Id === "" || addMatchPlayer2Id === "") return;
+    await addMatch(season.id, { date: addMatchDate, player1Id: addMatchPlayer1Id, player2Id: addMatchPlayer2Id });
+    setAddMatchDate("");
+    setAddMatchPlayer1Id("");
+    setAddMatchPlayer2Id("");
+    void load();
+  }
+
+  function toggleMatchSelection(matchId: number) {
+    setSelectedMatchIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(matchId)) {
+        next.delete(matchId);
+      } else {
+        next.add(matchId);
+      }
+      return next;
+    });
+  }
+
+  async function handleDeleteSelected() {
+    if (!season || selectedMatchIds.size === 0) return;
+    const selected = season.matches.filter((m) => selectedMatchIds.has(m.id));
+    const anyPlayed = selected.some((m) => m.status === "played");
+    const message = anyPlayed
+      ? `Delete ${selected.length} match(es)? This cannot be undone. At least one selected match has already been played — its recorded result and full throw history will be permanently lost.`
+      : `Delete ${selected.length} match(es)? This cannot be undone.`;
+    if (!window.confirm(message)) return;
+    await Promise.all([...selectedMatchIds].map((id) => deleteMatch(id)));
+    setSelectedMatchIds(new Set());
     void load();
   }
 
@@ -104,6 +144,58 @@ export default function SeasonPage() {
       <HighestCheckoutAward award={computeHighestCheckout(season.participants, season.matches)} />
       <Standings rows={computeStandings(season.participants, season.matches)} />
       <PlayerStats stats={stats} />
+      {user?.role === "admin" && (
+        <div className="mb-4 rounded border border-gray-300 p-3">
+          <h2 className="font-heading mb-2 font-semibold">Add Match</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="date"
+              aria-label="New match date"
+              value={addMatchDate}
+              onChange={(e) => setAddMatchDate(e.target.value)}
+              className="rounded border border-gray-300 p-1"
+            />
+            <select
+              aria-label="Player 1"
+              value={addMatchPlayer1Id}
+              onChange={(e) => setAddMatchPlayer1Id(e.target.value ? Number(e.target.value) : "")}
+              className="rounded border border-gray-300 p-1"
+            >
+              <option value="">Player 1</option>
+              {season.participants.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.displayName}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Player 2"
+              value={addMatchPlayer2Id}
+              onChange={(e) => setAddMatchPlayer2Id(e.target.value ? Number(e.target.value) : "")}
+              className="rounded border border-gray-300 p-1"
+            >
+              <option value="">Player 2</option>
+              {season.participants.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.displayName}
+                </option>
+              ))}
+            </select>
+            <button onClick={() => void handleAddMatch()} className="text-primary underline">
+              Add Match
+            </button>
+          </div>
+        </div>
+      )}
+      {user?.role === "admin" && (
+        <button
+          onClick={() => void handleDeleteSelected()}
+          disabled={selectedMatchIds.size === 0}
+          className="text-primary mb-4 underline disabled:text-gray-400 disabled:no-underline"
+        >
+          Delete Selected ({selectedMatchIds.size})
+        </button>
+      )}
       <RoundRobinSchedule
         matches={season.matches}
         participants={season.participants}
@@ -119,6 +211,12 @@ export default function SeasonPage() {
             <>
               {user?.role === "admin" && (
                 <>
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${match.player1.displayName} vs ${match.player2.displayName}`}
+                    checked={selectedMatchIds.has(match.id)}
+                    onChange={() => toggleMatchSelection(match.id)}
+                  />
                   <input
                     type="date"
                     aria-label={`Reschedule ${match.player1.displayName} vs ${match.player2.displayName}`}
