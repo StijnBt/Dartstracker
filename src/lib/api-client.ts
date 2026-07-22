@@ -167,6 +167,19 @@ export async function getSeason(id: number): Promise<Season> {
   return data.season;
 }
 
+export type SeasonPlayerStat = {
+  playerId: number;
+  displayName: string;
+  threeDartAverage: number;
+  oneEightyCount: number;
+};
+
+export async function getSeasonStats(id: number): Promise<SeasonPlayerStat[]> {
+  const response = await fetch(`/api/seasons/${id}/stats`, { credentials: "same-origin" });
+  const data = await parseJsonResponse<{ stats: SeasonPlayerStat[] }>(response);
+  return data.stats;
+}
+
 export async function createSeason(input: CreateSeasonInput): Promise<Season> {
   const response = await fetch("/api/seasons", {
     method: "POST",

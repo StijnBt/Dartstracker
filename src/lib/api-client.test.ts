@@ -8,6 +8,7 @@ import {
   updateMember,
   listSeasons,
   getSeason,
+  getSeasonStats,
   createSeason,
   archiveSeason,
   updateMatch,
@@ -172,6 +173,21 @@ describe("api-client", () => {
 
       expect(fetch).toHaveBeenCalledWith("/api/seasons/1", expect.objectContaining({ credentials: "same-origin" }));
       expect(result).toEqual(season);
+    });
+  });
+
+  describe("getSeasonStats", () => {
+    it("fetches and returns season stats", async () => {
+      const stats = [{ playerId: 1, displayName: "Administrator", threeDartAverage: 65.5, oneEightyCount: 2 }];
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ stats }), { status: 200 }));
+
+      const result = await getSeasonStats(1);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/seasons/1/stats",
+        expect.objectContaining({ credentials: "same-origin" })
+      );
+      expect(result).toEqual(stats);
     });
   });
 
