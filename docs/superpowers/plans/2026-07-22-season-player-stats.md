@@ -48,7 +48,7 @@ describe("computeSeasonStats", () => {
 
     const stats = computeSeasonStats(throws);
 
-    expect(stats).toEqual([{ playerId: P1, threeDartAverage: 60, oneEightyCount: 1 }]);
+    expect(stats).toEqual([{ playerId: P1, threeDartAverage: 180, oneEightyCount: 1 }]);
   });
 
   it("excludes a busted turn's score from the average but still counts its darts", () => {
@@ -86,7 +86,7 @@ describe("computeSeasonStats", () => {
 
     const stats = computeSeasonStats(throws);
 
-    expect(stats).toEqual([{ playerId: P1, threeDartAverage: 60, oneEightyCount: 2 }]);
+    expect(stats).toEqual([{ playerId: P1, threeDartAverage: 180, oneEightyCount: 2 }]);
   });
 
   it("keeps stats separate per player", () => {
@@ -101,8 +101,8 @@ describe("computeSeasonStats", () => {
 
     const stats = computeSeasonStats(throws);
 
-    expect(stats.find((s) => s.playerId === P1)).toEqual({ playerId: P1, threeDartAverage: 60, oneEightyCount: 1 });
-    expect(stats.find((s) => s.playerId === P2)).toEqual({ playerId: P2, threeDartAverage: 20, oneEightyCount: 0 });
+    expect(stats.find((s) => s.playerId === P1)).toEqual({ playerId: P1, threeDartAverage: 180, oneEightyCount: 1 });
+    expect(stats.find((s) => s.playerId === P2)).toEqual({ playerId: P2, threeDartAverage: 60, oneEightyCount: 0 });
   });
 
   it("omits any player who has no throws at all", () => {
