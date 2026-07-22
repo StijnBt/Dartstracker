@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
-import { listSeasons, getSeason, archiveSeason, updateMatch, type Season, type SeasonMatch } from "../../lib/api-client";
+import {
+  listSeasons,
+  getSeason,
+  getSeasonStats,
+  archiveSeason,
+  updateMatch,
+  type Season,
+  type SeasonMatch,
+  type SeasonPlayerStat,
+} from "../../lib/api-client";
 import { computeStandings } from "../../lib/standings";
 import { computeHighestCheckout } from "../../lib/awards";
 import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
 import Standings from "./Standings";
 import HighestCheckoutAward from "./HighestCheckoutAward";
+import PlayerStats from "./PlayerStats";
 
 export default function SeasonPage() {
   const { user } = useAuth();
   const [season, setSeason] = useState<Season | null>(null);
+  const [stats, setStats] = useState<SeasonPlayerStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +35,9 @@ export default function SeasonPage() {
         setSeason(null);
         return;
       }
-      setSeason(await getSeason(active.id));
+      const [seasonData, statsData] = await Promise.all([getSeason(active.id), getSeasonStats(active.id)]);
+      setSeason(seasonData);
+      setStats(statsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load season");
     } finally {
@@ -90,6 +103,7 @@ export default function SeasonPage() {
       </div>
       <HighestCheckoutAward award={computeHighestCheckout(season.participants, season.matches)} />
       <Standings rows={computeStandings(season.participants, season.matches)} />
+      <PlayerStats stats={stats} />
       <RoundRobinSchedule
         matches={season.matches}
         participants={season.participants}

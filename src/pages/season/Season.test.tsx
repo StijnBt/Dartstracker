@@ -1,7 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import SeasonPage from "./Season";
 import * as apiClient from "../../lib/api-client";
 import { useAuth } from "../../lib/AuthContext";
@@ -67,6 +67,10 @@ function mockAdmin() {
 }
 
 describe("SeasonPage", () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.getSeasonStats).mockResolvedValue([]);
+  });
+
   it("shows an empty state with no Create Season link for a player when there is no active season", async () => {
     mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([]);
@@ -126,6 +130,28 @@ describe("SeasonPage", () => {
     expect(screen.getByText("Legs Won")).toBeInTheDocument();
     const administratorRow = screen.getByText("Administrator").closest("tr")!;
     expect(administratorRow).toHaveTextContent("3");
+  });
+
+  it("renders the player stats table computed from the season's throw history", async () => {
+    mockNonParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
+    vi.mocked(apiClient.getSeasonStats).mockResolvedValue([
+      { playerId: 1, displayName: "Administrator", threeDartAverage: 65.5, oneEightyCount: 1 },
+    ]);
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    expect(screen.getByText("3-Dart Avg")).toBeInTheDocument();
+    const statsTable = screen.getByText("3-Dart Avg").closest("table")!;
+    expect(within(statsTable).getByText("Administrator")).toBeInTheDocument();
+    expect(within(statsTable).getByText("65.50")).toBeInTheDocument();
   });
 
   it("renders the highest checkout award computed from the season's matches", async () => {
