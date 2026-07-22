@@ -88,6 +88,41 @@ describe("SeasonDetail", () => {
     expect(administratorRow).toHaveTextContent("3");
   });
 
+  it("renders the highest checkout award computed from the season's matches", async () => {
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      id: 1,
+      name: "Winter 2025",
+      roundType: "single",
+      status: "archived",
+      participants: [
+        { id: 1, displayName: "Administrator" },
+        { id: 2, displayName: "Bob Smith" },
+      ],
+      matches: [
+        {
+          id: 101,
+          roundNumber: 1,
+          date: "2025-12-01",
+          status: "played",
+          player1: { id: 1, displayName: "Administrator" },
+          player2: { id: 2, displayName: "Bob Smith" },
+          player1Legs: 3,
+          player2Legs: 0,
+          player1Checkout: 85,
+          player2Checkout: null,
+          resultEnteredBy: null,
+          resultEnteredAt: null,
+        },
+      ],
+    });
+
+    renderWithRouter("1");
+
+    await waitFor(() => expect(screen.getByText("Winter 2025")).toBeInTheDocument());
+    expect(screen.getByText(/Highest Checkout/)).toBeInTheDocument();
+    expect(screen.getByText(/85/)).toBeInTheDocument();
+  });
+
   it("shows an error message when the season doesn't exist", async () => {
     vi.mocked(apiClient.getSeason).mockRejectedValue(new Error("Season not found"));
 

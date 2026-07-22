@@ -128,6 +128,26 @@ describe("SeasonPage", () => {
     expect(administratorRow).toHaveTextContent("3");
   });
 
+  it("renders the highest checkout award computed from the season's matches", async () => {
+    mockNonParticipant();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+    vi.mocked(apiClient.getSeason).mockResolvedValue({
+      ...season,
+      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1, player1Checkout: 121 }],
+    });
+    render(
+      <MemoryRouter>
+        <SeasonPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    expect(screen.getByText(/Highest Checkout/)).toBeInTheDocument();
+    expect(screen.getByText(/121/)).toBeInTheDocument();
+  });
+
   it("shows no controls, not even Enter Result, for a non-participant player", async () => {
     mockNonParticipant();
     vi.mocked(apiClient.listSeasons).mockResolvedValue([

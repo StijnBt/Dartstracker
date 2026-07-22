@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getSeason, type Season } from "../../lib/api-client";
 import { computeStandings } from "../../lib/standings";
+import { computeHighestCheckout } from "../../lib/awards";
 import RoundRobinSchedule from "./RoundRobinSchedule";
 import Standings from "./Standings";
+import HighestCheckoutAward from "./HighestCheckoutAward";
 
 export default function SeasonDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +36,7 @@ export default function SeasonDetail() {
   return (
     <div className="p-4">
       <h1 className="text-primary font-heading mb-4 text-2xl font-bold">{season.name}</h1>
+      <HighestCheckoutAward award={computeHighestCheckout(season.participants, season.matches)} />
       <Standings rows={computeStandings(season.participants, season.matches)} />
       <RoundRobinSchedule matches={season.matches} participants={season.participants} />
     </div>
