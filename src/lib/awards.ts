@@ -6,7 +6,7 @@ export type HighestCheckoutAward = {
 } | null;
 
 export function computeHighestCheckout(
-  participants: SeasonParticipantSummary[],
+  _participants: SeasonParticipantSummary[],
   matches: SeasonMatch[]
 ): HighestCheckoutAward {
   let value: number | null = null;
