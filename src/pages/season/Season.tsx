@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
 import { listSeasons, getSeason, archiveSeason, updateMatch, type Season, type SeasonMatch } from "../../lib/api-client";
 import { computeStandings } from "../../lib/standings";
+import { computeHighestCheckout } from "../../lib/awards";
 import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
 import Standings from "./Standings";
+import HighestCheckoutAward from "./HighestCheckoutAward";
 
 export default function SeasonPage() {
   const { user } = useAuth();
@@ -86,6 +88,7 @@ export default function SeasonPage() {
           </button>
         )}
       </div>
+      <HighestCheckoutAward award={computeHighestCheckout(season.participants, season.matches)} />
       <Standings rows={computeStandings(season.participants, season.matches)} />
       <RoundRobinSchedule
         matches={season.matches}
