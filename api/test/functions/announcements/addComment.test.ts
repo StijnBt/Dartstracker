@@ -55,6 +55,29 @@ describe("addComment function", () => {
     expect(prisma.comment.create).not.toHaveBeenCalled();
   });
 
+  it("returns 201 when body is exactly 500 characters after trimming", async () => {
+    vi.mocked(prisma.announcement.findUnique).mockResolvedValue(
+      existingAnnouncement as unknown as Awaited<ReturnType<typeof prisma.announcement.findUnique>>
+    );
+    const exactly500 = "a".repeat(500);
+    vi.mocked(prisma.comment.create).mockResolvedValue({
+      id: 11,
+      announcementId: 5,
+      authorId: 2,
+      body: exactly500,
+      createdAt: new Date("2026-07-25T12:00:00Z"),
+      author: { id: 2, displayName: "Bob Smith" },
+    } as unknown as Awaited<ReturnType<typeof prisma.comment.create>>);
+
+    const result = await addComment(createRequest("5", { body: `  ${exactly500}  ` }), createContext());
+
+    expect(result.status).toBe(201);
+    expect(prisma.comment.create).toHaveBeenCalledWith({
+      data: { announcementId: 5, authorId: 2, body: exactly500 },
+      include: { author: true },
+    });
+  });
+
   it("returns 404 when the announcement doesn't exist", async () => {
     vi.mocked(prisma.announcement.findUnique).mockResolvedValue(null);
     const result = await addComment(createRequest("999", { body: "Nice!" }), createContext());

@@ -5,9 +5,9 @@ type AnnouncementCardProps = {
   announcement: Announcement;
   currentUserId: number;
   isAdmin: boolean;
-  onUpdate: (id: number, input: UpdateAnnouncementInput) => Promise<void>;
+  onUpdate: (id: number, input: UpdateAnnouncementInput) => Promise<boolean>;
   onDelete: (id: number) => Promise<void>;
-  onAddComment: (announcementId: number, body: string) => Promise<void>;
+  onAddComment: (announcementId: number, body: string) => Promise<boolean>;
   onDeleteComment: (commentId: number) => Promise<void>;
 };
 
@@ -36,14 +36,18 @@ export default function AnnouncementCard({
 
   async function handleSave() {
     if (!editTitle.trim() || !editBody.trim()) return;
-    await onUpdate(announcement.id, { title: editTitle, body: editBody });
-    setEditing(false);
+    const success = await onUpdate(announcement.id, { title: editTitle, body: editBody });
+    if (success) {
+      setEditing(false);
+    }
   }
 
   async function handlePostComment() {
     if (!commentText.trim()) return;
-    await onAddComment(announcement.id, commentText);
-    setCommentText("");
+    const success = await onAddComment(announcement.id, commentText);
+    if (success) {
+      setCommentText("");
+    }
   }
 
   return (

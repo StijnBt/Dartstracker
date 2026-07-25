@@ -91,6 +91,27 @@ describe("AnnouncementFeed", () => {
     expect(apiClient.getAnnouncements).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the reply thread open across a post-comment reload", async () => {
+    mockPlayer();
+    const withComment: apiClient.Announcement = {
+      ...announcement,
+      comments: [
+        { id: 10, body: "Nice!", author: { id: 2, displayName: "Bob Smith" }, createdAt: "2026-07-25T11:00:00.000Z" },
+      ],
+    };
+    vi.mocked(apiClient.getAnnouncements).mockResolvedValueOnce([announcement]).mockResolvedValueOnce([withComment]);
+    vi.mocked(apiClient.addComment).mockResolvedValue(withComment.comments[0]);
+    render(<AnnouncementFeed />);
+    await waitFor(() => expect(screen.getByText("Season kickoff")).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "Reply" }));
+    await userEvent.type(screen.getByLabelText("Comment on Season kickoff"), "Nice!");
+    await userEvent.click(screen.getByRole("button", { name: "Post Comment" }));
+
+    await waitFor(() => expect(screen.getByText("Nice!")).toBeInTheDocument());
+    expect(screen.getByLabelText("Comment on Season kickoff")).toBeInTheDocument();
+  });
+
   it("shows an error message when loading fails", async () => {
     mockPlayer();
     vi.mocked(apiClient.getAnnouncements).mockRejectedValue(new Error("Network error"));

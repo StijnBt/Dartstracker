@@ -20,29 +20,34 @@ export default function AnnouncementFeed() {
   const [newTitle, setNewTitle] = useState("");
   const [newBody, setNewBody] = useState("");
 
-  async function load() {
-    setLoading(true);
+  async function refresh(): Promise<boolean> {
     setError(null);
     try {
       setAnnouncements(await getAnnouncements());
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load announcements");
-    } finally {
-      setLoading(false);
+      return false;
     }
   }
 
   useEffect(() => {
-    void load();
+    void (async () => {
+      setLoading(true);
+      await refresh();
+      setLoading(false);
+    })();
   }, []);
 
-  async function withErrorHandling(action: () => Promise<unknown>) {
+  async function withErrorHandling(action: () => Promise<unknown>): Promise<boolean> {
     setError(null);
     try {
       await action();
-      await load();
+      await refresh();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
+      return false;
     }
   }
 
@@ -55,8 +60,8 @@ export default function AnnouncementFeed() {
     });
   }
 
-  async function handleUpdate(id: number, input: UpdateAnnouncementInput) {
-    await withErrorHandling(() => updateAnnouncement(id, input));
+  async function handleUpdate(id: number, input: UpdateAnnouncementInput): Promise<boolean> {
+    return withErrorHandling(() => updateAnnouncement(id, input));
   }
 
   async function handleDelete(id: number) {
@@ -64,8 +69,8 @@ export default function AnnouncementFeed() {
     await withErrorHandling(() => deleteAnnouncement(id));
   }
 
-  async function handleAddComment(announcementId: number, body: string) {
-    await withErrorHandling(() => addComment(announcementId, { body }));
+  async function handleAddComment(announcementId: number, body: string): Promise<boolean> {
+    return withErrorHandling(() => addComment(announcementId, { body }));
   }
 
   async function handleDeleteComment(commentId: number) {

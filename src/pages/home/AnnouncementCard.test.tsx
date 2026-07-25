@@ -21,10 +21,10 @@ const announcement: Announcement = {
 };
 
 function renderCard(overrides: Partial<Parameters<typeof AnnouncementCard>[0]> = {}) {
-  const onUpdate = vi.fn().mockResolvedValue(undefined);
-  const onDelete = vi.fn().mockResolvedValue(undefined);
-  const onAddComment = vi.fn().mockResolvedValue(undefined);
-  const onDeleteComment = vi.fn().mockResolvedValue(undefined);
+  const onUpdate = overrides.onUpdate ?? vi.fn().mockResolvedValue(true);
+  const onDelete = overrides.onDelete ?? vi.fn().mockResolvedValue(undefined);
+  const onAddComment = overrides.onAddComment ?? vi.fn().mockResolvedValue(true);
+  const onDeleteComment = overrides.onDeleteComment ?? vi.fn().mockResolvedValue(undefined);
   render(
     <AnnouncementCard
       announcement={announcement}
@@ -75,6 +75,16 @@ describe("AnnouncementCard", () => {
         body: "Welcome back everyone!",
       });
     });
+  });
+
+  it("keeps the edit form open when onUpdate fails", async () => {
+    const { onUpdate } = renderCard({ isAdmin: true, onUpdate: vi.fn().mockResolvedValue(false) });
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 
   it("discards changes when Cancel is clicked", async () => {
@@ -149,6 +159,18 @@ describe("AnnouncementCard", () => {
 
     await waitFor(() => expect(onAddComment).toHaveBeenCalledWith(1, "Great news!"));
     await waitFor(() => expect(textarea).toHaveValue(""));
+  });
+
+  it("keeps the typed comment when onAddComment fails", async () => {
+    const { onAddComment } = renderCard({ onAddComment: vi.fn().mockResolvedValue(false) });
+    await userEvent.click(screen.getByRole("button", { name: "Reply" }));
+
+    const textarea = screen.getByLabelText("Comment on Season kickoff");
+    await userEvent.type(textarea, "Great news!");
+    await userEvent.click(screen.getByRole("button", { name: "Post Comment" }));
+
+    await waitFor(() => expect(onAddComment).toHaveBeenCalled());
+    expect(textarea).toHaveValue("Great news!");
   });
 
   it("disables Post Comment when the textarea is empty", async () => {
