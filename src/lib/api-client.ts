@@ -339,3 +339,93 @@ export async function undoLiveThrow(id: number): Promise<LiveMatchState> {
   });
   return parseJsonResponse<LiveMatchState>(response);
 }
+
+export type AuthorSummary = {
+  id: number;
+  displayName: string;
+};
+
+export type AnnouncementComment = {
+  id: number;
+  body: string;
+  author: AuthorSummary;
+  createdAt: string;
+};
+
+export type Announcement = {
+  id: number;
+  title: string;
+  body: string;
+  author: AuthorSummary;
+  createdAt: string;
+  comments: AnnouncementComment[];
+};
+
+export type CreateAnnouncementInput = {
+  title: string;
+  body: string;
+};
+
+export type UpdateAnnouncementInput = {
+  title?: string;
+  body?: string;
+};
+
+export type AddCommentInput = {
+  body: string;
+};
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+  const response = await fetch("/api/announcements", { credentials: "same-origin" });
+  const data = await parseJsonResponse<{ announcements: Announcement[] }>(response);
+  return data.announcements;
+}
+
+export async function createAnnouncement(input: CreateAnnouncementInput): Promise<Announcement> {
+  const response = await fetch("/api/announcements", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ announcement: Announcement }>(response);
+  return data.announcement;
+}
+
+export async function updateAnnouncement(id: number, input: UpdateAnnouncementInput): Promise<Announcement> {
+  const response = await fetch(`/api/announcements/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ announcement: Announcement }>(response);
+  return data.announcement;
+}
+
+export async function deleteAnnouncement(id: number): Promise<void> {
+  const response = await fetch(`/api/announcements/${id}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  await parseJsonResponse<{ success: boolean }>(response);
+}
+
+export async function addComment(announcementId: number, input: AddCommentInput): Promise<AnnouncementComment> {
+  const response = await fetch(`/api/announcements/${announcementId}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonResponse<{ comment: AnnouncementComment }>(response);
+  return data.comment;
+}
+
+export async function deleteComment(id: number): Promise<void> {
+  const response = await fetch(`/api/comments/${id}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  await parseJsonResponse<{ success: boolean }>(response);
+}
