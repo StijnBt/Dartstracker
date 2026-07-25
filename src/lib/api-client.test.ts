@@ -15,6 +15,12 @@ import {
   addMatch,
   deleteMatch,
   submitMatchResult,
+  getAnnouncements,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  addComment,
+  deleteComment,
 } from "./api-client";
 
 describe("api-client", () => {
@@ -344,6 +350,123 @@ describe("api-client", () => {
 
       await expect(submitMatchResult(101, { player1Legs: 3, player2Legs: 3 })).rejects.toThrow(
         "One player must win exactly 3 legs; the other must have 0-2 legs"
+      );
+    });
+  });
+
+  describe("getAnnouncements", () => {
+    it("fetches and returns the announcement list", async () => {
+      const announcements = [
+        {
+          id: 1,
+          title: "Season kickoff",
+          body: "Welcome back!",
+          author: { id: 1, displayName: "Administrator" },
+          createdAt: "2026-07-25T10:00:00.000Z",
+          comments: [],
+        },
+      ];
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ announcements }), { status: 200 }));
+
+      const result = await getAnnouncements();
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/announcements",
+        expect.objectContaining({ credentials: "same-origin" })
+      );
+      expect(result).toEqual(announcements);
+    });
+  });
+
+  describe("createAnnouncement", () => {
+    it("posts the new announcement and returns it", async () => {
+      const announcement = {
+        id: 1,
+        title: "Season kickoff",
+        body: "Welcome back!",
+        author: { id: 1, displayName: "Administrator" },
+        createdAt: "2026-07-25T10:00:00.000Z",
+        comments: [],
+      };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ announcement }), { status: 201 }));
+
+      const input = { title: "Season kickoff", body: "Welcome back!" };
+      const result = await createAnnouncement(input);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/announcements",
+        expect.objectContaining({ method: "POST", credentials: "same-origin", body: JSON.stringify(input) })
+      );
+      expect(result).toEqual(announcement);
+    });
+  });
+
+  describe("updateAnnouncement", () => {
+    it("patches the announcement and returns it", async () => {
+      const announcement = {
+        id: 1,
+        title: "Season kickoff (updated)",
+        body: "Welcome back!",
+        author: { id: 1, displayName: "Administrator" },
+        createdAt: "2026-07-25T10:00:00.000Z",
+        comments: [],
+      };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ announcement }), { status: 200 }));
+
+      const input = { title: "Season kickoff (updated)" };
+      const result = await updateAnnouncement(1, input);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/announcements/1",
+        expect.objectContaining({ method: "PATCH", credentials: "same-origin", body: JSON.stringify(input) })
+      );
+      expect(result).toEqual(announcement);
+    });
+  });
+
+  describe("deleteAnnouncement", () => {
+    it("sends a DELETE request for the announcement", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      await deleteAnnouncement(1);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/announcements/1",
+        expect.objectContaining({ method: "DELETE", credentials: "same-origin" })
+      );
+    });
+  });
+
+  describe("addComment", () => {
+    it("posts the new comment and returns it", async () => {
+      const comment = {
+        id: 10,
+        body: "Nice!",
+        author: { id: 2, displayName: "Bob Smith" },
+        createdAt: "2026-07-25T11:00:00.000Z",
+      };
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ comment }), { status: 201 }));
+
+      const input = { body: "Nice!" };
+      const result = await addComment(1, input);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/announcements/1/comments",
+        expect.objectContaining({ method: "POST", credentials: "same-origin", body: JSON.stringify(input) })
+      );
+      expect(result).toEqual(comment);
+    });
+  });
+
+  describe("deleteComment", () => {
+    it("sends a DELETE request for the comment", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      await deleteComment(10);
+
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/comments/10",
+        expect.objectContaining({ method: "DELETE", credentials: "same-origin" })
       );
     });
   });

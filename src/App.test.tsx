@@ -9,6 +9,7 @@ vi.mock("./lib/api-client");
 describe("App", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
+    vi.mocked(apiClient.getAnnouncements).mockResolvedValue([]);
   });
 
   it("redirects to the login page when there is no active session", async () => {
