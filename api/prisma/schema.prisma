@@ -22,6 +22,9 @@ model User {
   legsStarted          Leg[]               @relation("LegStartingPlayer")
   legsWon              Leg[]               @relation("LegWinner")
   throwsRecorded       Throw[]             @relation("ThrowPlayer")
+
+  announcementsPosted  Announcement[]      @relation("AnnouncementAuthor")
+  commentsPosted       Comment[]           @relation("CommentAuthor")
 }
 
 model Season {
@@ -101,4 +104,26 @@ model Throw {
 
   leg    Leg  @relation(fields: [legId], references: [id])
   player User @relation("ThrowPlayer", fields: [playerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  authorId  Int
+  title     String
+  body      String   @db.NVarChar(Max)
+  createdAt DateTime @default(now())
+
+  author   User      @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments Comment[]
+}
+
+model Comment {
+  id             Int      @id @default(autoincrement())
+  announcementId Int
+  authorId       Int
+  body           String
+  createdAt      DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id])
+  author       User         @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
