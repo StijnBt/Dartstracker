@@ -106,7 +106,8 @@ describe("SeasonStandings", () => {
     );
     await waitFor(() => screen.getByText("Spring 2026"));
 
-    expect(screen.getByText(/Highest Checkout/)).toBeInTheDocument();
-    expect(screen.getByText(/121/)).toBeInTheDocument();
+    const awardParagraph = screen.getByText(/Highest Checkout:/).closest("p")!;
+    expect(awardParagraph).toBeInTheDocument();
+    expect(within(awardParagraph).getByText("121")).toBeInTheDocument();
   });
 });
