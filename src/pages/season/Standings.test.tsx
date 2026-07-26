@@ -4,8 +4,8 @@ import Standings from "./Standings";
 import type { StandingsRow } from "../../lib/standings";
 
 const rows: StandingsRow[] = [
-  { player: { id: 1, displayName: "Alice" }, matchesPlayed: 2, legsWon: 6, legsLost: 1, diff: 5, rank: 1 },
-  { player: { id: 2, displayName: "Bob" }, matchesPlayed: 2, legsWon: 3, legsLost: 4, diff: -1, rank: 2 },
+  { player: { id: 1, displayName: "Alice" }, matchesPlayed: 2, legsWon: 6, legsLost: 1, diff: 5, rank: 1, highestCheckout: null },
+  { player: { id: 2, displayName: "Bob" }, matchesPlayed: 2, legsWon: 3, legsLost: 4, diff: -1, rank: 2, highestCheckout: null },
 ];
 
 describe("Standings", () => {
