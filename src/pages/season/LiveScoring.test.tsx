@@ -62,7 +62,7 @@ function renderWithRouter(matchId: number) {
     <MemoryRouter initialEntries={[`/season/matches/${matchId}/live`]}>
       <Routes>
         <Route path="/season/matches/:id/live" element={<LiveScoring />} />
-        <Route path="/season" element={<div>Season page</div>} />
+        <Route path="/season/matches" element={<div>Matches page</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -162,7 +162,7 @@ describe("LiveScoring", () => {
     });
   });
 
-  it("shows a completion summary with a Back to Season button when the match is complete", async () => {
+  it("shows a completion summary with a Back to Matches button when the match is complete", async () => {
     mockAuth(1, "admin");
     mockSeasonLoad();
     vi.mocked(apiClient.getLiveMatch).mockResolvedValue({
@@ -178,8 +178,8 @@ describe("LiveScoring", () => {
     });
     expect(screen.queryByRole("button", { name: "20" })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Back to Season" }));
-    await waitFor(() => expect(screen.getByText("Season page")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Back to Matches" }));
+    await waitFor(() => expect(screen.getByText("Matches page")).toBeInTheDocument());
   });
 
   it("shows a read-only message with no scoring controls for a non-participant player", async () => {

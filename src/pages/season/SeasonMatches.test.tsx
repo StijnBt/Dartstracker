@@ -1,8 +1,8 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import SeasonPage from "./Season";
+import SeasonMatches from "./SeasonMatches";
 import * as apiClient from "../../lib/api-client";
 import { useAuth } from "../../lib/AuthContext";
 
@@ -66,10 +66,9 @@ function mockAdmin() {
   });
 }
 
-describe("SeasonPage", () => {
+describe("SeasonMatches", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(apiClient.getSeasonStats).mockResolvedValue([]);
   });
 
   it("shows an empty state with no Create Season link for a player when there is no active season", async () => {
@@ -77,7 +76,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.listSeasons).mockResolvedValue([]);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => expect(screen.getByText("No active season.")).toBeInTheDocument());
@@ -89,7 +88,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.listSeasons).mockResolvedValue([]);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => {
@@ -105,74 +104,11 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => expect(screen.getByText("Spring 2026")).toBeInTheDocument());
     expect(screen.getByText("Administrator vs Bob Smith")).toBeInTheDocument();
-  });
-
-  it("renders a standings table computed from the season's matches", async () => {
-    mockNonParticipant();
-    vi.mocked(apiClient.listSeasons).mockResolvedValue([
-      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
-    ]);
-    vi.mocked(apiClient.getSeason).mockResolvedValue({
-      ...season,
-      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1 }],
-    });
-    render(
-      <MemoryRouter>
-        <SeasonPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => screen.getByText("Spring 2026"));
-
-    expect(screen.getByText("Legs Won")).toBeInTheDocument();
-    const administratorRow = screen.getByText("Administrator").closest("tr")!;
-    expect(administratorRow).toHaveTextContent("3");
-  });
-
-  it("renders the player stats table computed from the season's throw history", async () => {
-    mockNonParticipant();
-    vi.mocked(apiClient.listSeasons).mockResolvedValue([
-      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
-    ]);
-    vi.mocked(apiClient.getSeason).mockResolvedValue(season);
-    vi.mocked(apiClient.getSeasonStats).mockResolvedValue([
-      { playerId: 1, displayName: "Administrator", threeDartAverage: 65.5, oneEightyCount: 1 },
-    ]);
-    render(
-      <MemoryRouter>
-        <SeasonPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => screen.getByText("Spring 2026"));
-
-    expect(screen.getByText("3-Dart Avg")).toBeInTheDocument();
-    const statsTable = screen.getByText("3-Dart Avg").closest("table")!;
-    expect(within(statsTable).getByText("Administrator")).toBeInTheDocument();
-    expect(within(statsTable).getByText("65.50")).toBeInTheDocument();
-  });
-
-  it("renders the highest checkout award computed from the season's matches", async () => {
-    mockNonParticipant();
-    vi.mocked(apiClient.listSeasons).mockResolvedValue([
-      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
-    ]);
-    vi.mocked(apiClient.getSeason).mockResolvedValue({
-      ...season,
-      matches: [{ ...season.matches[0], status: "played", player1Legs: 3, player2Legs: 1, player1Checkout: 121 }],
-    });
-    render(
-      <MemoryRouter>
-        <SeasonPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => screen.getByText("Spring 2026"));
-
-    expect(screen.getByText(/Highest Checkout/)).toBeInTheDocument();
-    expect(screen.getByText(/121/)).toBeInTheDocument();
   });
 
   it("shows no controls, not even Enter Result, for a non-participant player", async () => {
@@ -183,7 +119,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -200,7 +136,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -219,7 +155,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -237,7 +173,7 @@ describe("SeasonPage", () => {
     });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -255,7 +191,7 @@ describe("SeasonPage", () => {
     });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -274,7 +210,7 @@ describe("SeasonPage", () => {
     });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -297,7 +233,7 @@ describe("SeasonPage", () => {
     });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -318,7 +254,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.archiveSeason).mockResolvedValue({ ...season, status: "archived" });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -338,7 +274,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -353,7 +289,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -369,7 +305,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.addMatch).mockResolvedValue({ ...season.matches[0], id: 999, roundNumber: 0 });
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -393,7 +329,7 @@ describe("SeasonPage", () => {
     vi.mocked(apiClient.getSeason).mockResolvedValue(season);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -412,7 +348,7 @@ describe("SeasonPage", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));
@@ -439,7 +375,7 @@ describe("SeasonPage", () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     render(
       <MemoryRouter>
-        <SeasonPage />
+        <SeasonMatches />
       </MemoryRouter>
     );
     await waitFor(() => screen.getByText("Spring 2026"));

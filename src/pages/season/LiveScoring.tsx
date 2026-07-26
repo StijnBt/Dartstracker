@@ -234,10 +234,10 @@ export default function LiveScoring() {
           </p>
           <button
             type="button"
-            onClick={() => navigate("/season")}
+            onClick={() => navigate("/season/matches")}
             className="bg-primary text-primary-content font-heading rounded p-2"
           >
-            Back to Season
+            Back to Matches
           </button>
         </div>
       )}

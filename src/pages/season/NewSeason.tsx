@@ -47,7 +47,7 @@ export default function NewSeason() {
     setSubmitting(true);
     try {
       await createSeason({ name: name.trim(), roundType, participantIds: selectedIds, roundDates });
-      navigate("/season");
+      navigate("/season/matches");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create season");
     } finally {
