@@ -172,6 +172,10 @@ export default function SeasonMatches() {
       ? season.matches.filter((m) => m.player1.id === user.id || m.player2.id === user.id)
       : season.matches;
 
+  // Grouping keys on the raw match.date string rather than a parsed calendar day. This only stays
+  // correct because every match date in this app is built from a date-only "YYYY-MM-DD" form value
+  // (Add Match, Reschedule, season-creation round dates), which always parses to UTC midnight — so
+  // every match on the same calendar day shares a byte-identical date string.
   const dateCounts = new Map<string, number>();
   for (const match of dateFilterableMatches) {
     dateCounts.set(match.date, (dateCounts.get(match.date) ?? 0) + 1);
