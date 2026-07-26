@@ -39,6 +39,62 @@ const season: apiClient.Season = {
   ],
 };
 
+const multiDateSeason: apiClient.Season = {
+  id: 1,
+  name: "Spring 2026",
+  roundType: "single",
+  status: "active",
+  participants: [
+    { id: 1, displayName: "Administrator" },
+    { id: 2, displayName: "Bob Smith" },
+    { id: 3, displayName: "Carol Jones" },
+  ],
+  matches: [
+    {
+      id: 101,
+      roundNumber: 1,
+      date: "2026-08-01",
+      status: "scheduled",
+      player1: { id: 1, displayName: "Administrator" },
+      player2: { id: 2, displayName: "Bob Smith" },
+      player1Legs: null,
+      player2Legs: null,
+      player1Checkout: null,
+      player2Checkout: null,
+      resultEnteredBy: null,
+      resultEnteredAt: null,
+    },
+    {
+      id: 102,
+      roundNumber: 1,
+      date: "2026-08-01",
+      status: "cancelled",
+      player1: { id: 1, displayName: "Administrator" },
+      player2: { id: 3, displayName: "Carol Jones" },
+      player1Legs: null,
+      player2Legs: null,
+      player1Checkout: null,
+      player2Checkout: null,
+      resultEnteredBy: null,
+      resultEnteredAt: null,
+    },
+    {
+      id: 103,
+      roundNumber: 2,
+      date: "2026-08-08",
+      status: "scheduled",
+      player1: { id: 2, displayName: "Bob Smith" },
+      player2: { id: 3, displayName: "Carol Jones" },
+      player1Legs: null,
+      player2Legs: null,
+      player1Checkout: null,
+      player2Checkout: null,
+      resultEnteredBy: null,
+      resultEnteredAt: null,
+    },
+  ],
+};
+
 function mockNonParticipant() {
   vi.mocked(useAuth).mockReturnValue({
     user: { id: 3, username: "cjones", role: "player", displayName: "Carol Jones" },
@@ -385,5 +441,175 @@ describe("SeasonMatches", () => {
 
     expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("permanently lost"));
     expect(apiClient.deleteMatch).not.toHaveBeenCalled();
+  });
+});
+
+describe("SeasonMatches Date view", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([
+      { id: 1, name: "Spring 2026", roundType: "single", status: "active", createdAt: "2026-07-01" },
+    ]);
+  });
+
+  it("defaults to Round view", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    expect(screen.getByRole("heading", { name: "Round 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /All Matches/ })).not.toBeInTheDocument();
+  });
+
+  it("lists every date with a match count when switching to Date view", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+
+    expect(screen.getByRole("button", { name: "All Matches (3)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: `${new Date("2026-08-01").toLocaleDateString()} (2 matches)` })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: `${new Date("2026-08-08").toLocaleDateString()} (1 match)` })
+    ).toBeInTheDocument();
+  });
+
+  it("shows every match under All Matches by default in Date view", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+
+    expect(screen.getByText("Administrator vs Bob Smith")).toBeInTheDocument();
+    expect(screen.getByText("Administrator vs Carol Jones")).toBeInTheDocument();
+    expect(screen.getByText("Bob Smith vs Carol Jones")).toBeInTheDocument();
+  });
+
+  it("filters to only that date's matches when a date is clicked", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: `${new Date("2026-08-08").toLocaleDateString()} (1 match)` })
+    );
+
+    expect(screen.getByText("Bob Smith vs Carol Jones")).toBeInTheDocument();
+    expect(screen.queryByText("Administrator vs Bob Smith")).not.toBeInTheDocument();
+    expect(screen.queryByText("Administrator vs Carol Jones")).not.toBeInTheDocument();
+  });
+
+  it("still shows a cancelled match and counts it toward its date's total", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+
+    expect(screen.getByText("Administrator vs Carol Jones")).toBeInTheDocument();
+    expect(screen.getAllByText("cancelled")).toHaveLength(1);
+  });
+
+  it("filters both the match list and the date list itself when My matches only is checked", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "My matches only" }));
+
+    expect(screen.getByRole("button", { name: "All Matches (2)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: `${new Date("2026-08-01").toLocaleDateString()} (2 matches)` })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: new RegExp(new Date("2026-08-08").toLocaleDateString()) })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Administrator vs Bob Smith")).toBeInTheDocument();
+    expect(screen.queryByText("Bob Smith vs Carol Jones")).not.toBeInTheDocument();
+  });
+
+  it("shows a No matches message when a selection yields nothing", async () => {
+    mockNonParticipant();
+    vi.mocked(apiClient.getSeason).mockResolvedValue({ ...season, matches: [season.matches[0]] });
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "My matches only" }));
+
+    expect(screen.getByText("No matches")).toBeInTheDocument();
+  });
+
+  it("shows the same admin match actions in Date view as in Round view", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+
+    expect(screen.getByLabelText("Select Administrator vs Bob Smith")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Cancel" }).length).toBeGreaterThan(0);
+  });
+
+  it("switches back to Round view when Round view is clicked", async () => {
+    mockAdmin();
+    vi.mocked(apiClient.getSeason).mockResolvedValue(multiDateSeason);
+    render(
+      <MemoryRouter>
+        <SeasonMatches />
+      </MemoryRouter>
+    );
+    await waitFor(() => screen.getByText("Spring 2026"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Date view" }));
+    await userEvent.click(screen.getByRole("button", { name: "Round view" }));
+
+    expect(screen.getByRole("heading", { name: "Round 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /All Matches/ })).not.toBeInTheDocument();
   });
 });
