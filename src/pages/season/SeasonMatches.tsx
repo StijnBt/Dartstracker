@@ -4,26 +4,18 @@ import { useAuth } from "../../lib/AuthContext";
 import {
   listSeasons,
   getSeason,
-  getSeasonStats,
   archiveSeason,
   updateMatch,
   addMatch,
   deleteMatch,
   type Season,
   type SeasonMatch,
-  type SeasonPlayerStat,
 } from "../../lib/api-client";
-import { computeStandings } from "../../lib/standings";
-import { computeHighestCheckout } from "../../lib/awards";
 import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
-import Standings from "./Standings";
-import HighestCheckoutAward from "./HighestCheckoutAward";
-import PlayerStats from "./PlayerStats";
 
-export default function SeasonPage() {
+export default function SeasonMatches() {
   const { user } = useAuth();
   const [season, setSeason] = useState<Season | null>(null);
-  const [stats, setStats] = useState<SeasonPlayerStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addMatchDate, setAddMatchDate] = useState("");
@@ -41,9 +33,7 @@ export default function SeasonPage() {
         setSeason(null);
         return;
       }
-      const [seasonData, statsData] = await Promise.all([getSeason(active.id), getSeasonStats(active.id)]);
-      setSeason(seasonData);
-      setStats(statsData);
+      setSeason(await getSeason(active.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load season");
     } finally {
@@ -120,7 +110,7 @@ export default function SeasonPage() {
   if (!season) {
     return (
       <div className="p-4">
-        <h1 className="text-primary font-heading mb-4 text-2xl font-bold">Season</h1>
+        <h1 className="text-primary font-heading mb-4 text-2xl font-bold">Matches</h1>
         <p>No active season.</p>
         {user?.role === "admin" && (
           <Link to="/season/new" className="text-primary underline">
@@ -141,9 +131,6 @@ export default function SeasonPage() {
           </button>
         )}
       </div>
-      <HighestCheckoutAward award={computeHighestCheckout(season.participants, season.matches)} />
-      <Standings rows={computeStandings(season.participants, season.matches)} />
-      <PlayerStats stats={stats} />
       {user?.role === "admin" && (
         <div className="mb-4 rounded border border-gray-300 p-3">
           <h2 className="font-heading mb-2 font-semibold">Add Match</h2>

@@ -53,4 +53,22 @@ describe("App", () => {
       expect(screen.getByRole("heading", { name: "Members" })).toBeInTheDocument();
     });
   });
+
+  it("redirects /season to /season/standings", async () => {
+    vi.mocked(apiClient.fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      username: "admin",
+      role: "admin",
+      displayName: "Administrator",
+    });
+    vi.mocked(apiClient.listSeasons).mockResolvedValue([]);
+    window.history.pushState({}, "", "/season");
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No active season.")).toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe("/season/standings");
+  });
 });

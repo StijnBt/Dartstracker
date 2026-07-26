@@ -64,7 +64,7 @@ function renderWithRouter(matchId: number) {
     <MemoryRouter initialEntries={[`/season/matches/${matchId}/result`]}>
       <Routes>
         <Route path="/season/matches/:id/result" element={<MatchResult />} />
-        <Route path="/season" element={<div>Season page</div>} />
+        <Route path="/season/matches" element={<div>Matches page</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -157,7 +157,7 @@ describe("MatchResult", () => {
     await waitFor(() => {
       expect(apiClient.submitMatchResult).toHaveBeenCalledWith(101, { player1Legs: 3, player2Legs: 0 });
     });
-    await waitFor(() => expect(screen.getByText("Season page")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Matches page")).toBeInTheDocument());
   });
 
   it("includes a checkout in the payload only when entered", async () => {

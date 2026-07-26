@@ -20,7 +20,7 @@ function renderWithRouter() {
     <MemoryRouter initialEntries={["/season/new"]}>
       <Routes>
         <Route path="/season/new" element={<NewSeason />} />
-        <Route path="/season" element={<div>Season page</div>} />
+        <Route path="/season/matches" element={<div>Matches page</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -110,7 +110,7 @@ describe("NewSeason", () => {
         roundDates: ["2026-08-01", "2026-08-08", "2026-08-15"],
       });
     });
-    await waitFor(() => expect(screen.getByText("Season page")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Matches page")).toBeInTheDocument());
   });
 
   it("shows an error message when createSeason rejects", async () => {

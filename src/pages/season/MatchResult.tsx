@@ -61,7 +61,7 @@ export default function MatchResult() {
         ...(player1Checkout ? { player1Checkout: Number(player1Checkout) } : {}),
         ...(player2Checkout ? { player2Checkout: Number(player2Checkout) } : {}),
       });
-      navigate("/season");
+      navigate("/season/matches");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to save result");
     } finally {
