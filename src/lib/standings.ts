@@ -7,6 +7,7 @@ export type StandingsRow = {
   legsLost: number;
   diff: number;
   rank: number;
+  highestCheckout: number | null;
 };
 
 export function computeStandings(
@@ -19,20 +20,27 @@ export function computeStandings(
     let matchesPlayed = 0;
     let legsWon = 0;
     let legsLost = 0;
+    let highestCheckout: number | null = null;
 
     for (const match of playedMatches) {
       if (match.player1.id === player.id) {
         matchesPlayed++;
         legsWon += match.player1Legs ?? 0;
         legsLost += match.player2Legs ?? 0;
+        if (match.player1Checkout !== null && (highestCheckout === null || match.player1Checkout > highestCheckout)) {
+          highestCheckout = match.player1Checkout;
+        }
       } else if (match.player2.id === player.id) {
         matchesPlayed++;
         legsWon += match.player2Legs ?? 0;
         legsLost += match.player1Legs ?? 0;
+        if (match.player2Checkout !== null && (highestCheckout === null || match.player2Checkout > highestCheckout)) {
+          highestCheckout = match.player2Checkout;
+        }
       }
     }
 
-    return { player, matchesPlayed, legsWon, legsLost, diff: legsWon - legsLost, rank: 0 };
+    return { player, matchesPlayed, legsWon, legsLost, diff: legsWon - legsLost, rank: 0, highestCheckout };
   });
 
   rows.sort((a, b) => b.legsWon - a.legsWon || b.diff - a.diff);

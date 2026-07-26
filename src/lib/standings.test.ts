@@ -11,7 +11,9 @@ function playedMatch(
   player1: SeasonParticipantSummary,
   player2: SeasonParticipantSummary,
   player1Legs: number,
-  player2Legs: number
+  player2Legs: number,
+  player1Checkout: number | null = null,
+  player2Checkout: number | null = null
 ): SeasonMatch {
   return {
     id,
@@ -22,8 +24,8 @@ function playedMatch(
     player2,
     player1Legs,
     player2Legs,
-    player1Checkout: null,
-    player2Checkout: null,
+    player1Checkout,
+    player2Checkout,
     resultEnteredBy: null,
     resultEnteredAt: null,
   };
@@ -115,5 +117,32 @@ describe("computeStandings", () => {
     const alicesRow = rows.find((r) => r.player.id === alice.id)!;
 
     expect(alicesRow).toMatchObject({ matchesPlayed: 2, legsWon: 6, legsLost: 3, diff: 3 });
+  });
+
+  it("computes each player's highest checkout across their played matches", () => {
+    const matches = [
+      playedMatch(1, alice, bob, 3, 1, 80, null),
+      playedMatch(2, bob, alice, 3, 2, 40, 121),
+    ];
+    const rows = computeStandings([alice, bob], matches);
+    const alicesRow = rows.find((r) => r.player.id === alice.id)!;
+    const bobsRow = rows.find((r) => r.player.id === bob.id)!;
+
+    expect(alicesRow.highestCheckout).toBe(121);
+    expect(bobsRow.highestCheckout).toBe(40);
+  });
+
+  it("gives a player with no recorded checkouts a null highestCheckout", () => {
+    const rows = computeStandings([alice, bob], [playedMatch(1, alice, bob, 3, 1)]);
+    const alicesRow = rows.find((r) => r.player.id === alice.id)!;
+
+    expect(alicesRow.highestCheckout).toBeNull();
+  });
+
+  it("gives a participant with zero played matches a null highestCheckout", () => {
+    const rows = computeStandings([alice, bob, carol], [playedMatch(1, alice, bob, 3, 0, 100, null)]);
+    const carolsRow = rows.find((r) => r.player.id === carol.id)!;
+
+    expect(carolsRow.highestCheckout).toBeNull();
   });
 });

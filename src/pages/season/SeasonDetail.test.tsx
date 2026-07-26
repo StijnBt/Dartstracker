@@ -163,8 +163,9 @@ describe("SeasonDetail", () => {
     renderWithRouter("1");
 
     await waitFor(() => expect(screen.getByText("Winter 2025")).toBeInTheDocument());
-    expect(screen.getByText(/Highest Checkout/)).toBeInTheDocument();
-    expect(screen.getByText(/85/)).toBeInTheDocument();
+    const awardParagraph = screen.getByText(/Highest Checkout:/).closest("p")!;
+    expect(awardParagraph).toBeInTheDocument();
+    expect(within(awardParagraph).getByText("85")).toBeInTheDocument();
   });
 
   it("shows an error message when the season doesn't exist", async () => {
