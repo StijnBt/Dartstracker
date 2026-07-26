@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
 import {
@@ -12,6 +12,7 @@ import {
   type SeasonMatch,
 } from "../../lib/api-client";
 import RoundRobinSchedule, { formatMatchSummary } from "./RoundRobinSchedule";
+import MatchList from "./MatchList";
 
 export default function SeasonMatches() {
   const { user } = useAuth();
@@ -22,6 +23,9 @@ export default function SeasonMatches() {
   const [addMatchPlayer1Id, setAddMatchPlayer1Id] = useState<number | "">("");
   const [addMatchPlayer2Id, setAddMatchPlayer2Id] = useState<number | "">("");
   const [selectedMatchIds, setSelectedMatchIds] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<"round" | "date">("round");
+  const [selectedDate, setSelectedDate] = useState<string | "all">("all");
+  const [myMatchesOnly, setMyMatchesOnly] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -95,6 +99,48 @@ export default function SeasonMatches() {
     void load();
   }
 
+  function renderMatchActions(match: SeasonMatch): ReactNode {
+    const canRecordResult =
+      !!user && (user.role === "admin" || user.id === match.player1.id || user.id === match.player2.id);
+
+    if (!canRecordResult) {
+      return formatMatchSummary(match);
+    }
+
+    return (
+      <>
+        {user?.role === "admin" && (
+          <>
+            <input
+              type="checkbox"
+              aria-label={`Select ${match.player1.displayName} vs ${match.player2.displayName}`}
+              checked={selectedMatchIds.has(match.id)}
+              onChange={() => toggleMatchSelection(match.id)}
+            />
+            <input
+              type="date"
+              aria-label={`Reschedule ${match.player1.displayName} vs ${match.player2.displayName}`}
+              value={match.date.slice(0, 10)}
+              onChange={(e) => void handleReschedule(match.id, e.target.value)}
+              className="rounded border border-gray-300 p-1"
+            />
+            <button onClick={() => void handleToggleStatus(match)} className="text-primary underline">
+              {match.status === "cancelled" ? "Restore" : "Cancel"}
+            </button>
+          </>
+        )}
+        {(match.status === "scheduled" || match.status === "in_progress") && (
+          <Link to={`/season/matches/${match.id}/live`} className="text-primary underline">
+            {match.status === "in_progress" ? "Resume Live" : "Start Live"}
+          </Link>
+        )}
+        <Link to={`/season/matches/${match.id}/result`} className="text-primary underline">
+          {match.status === "played" ? "Edit Result" : "Enter Result"}
+        </Link>
+      </>
+    );
+  }
+
   if (loading) {
     return <p className="p-4">Loading…</p>;
   }
@@ -120,6 +166,27 @@ export default function SeasonMatches() {
       </div>
     );
   }
+
+  const dateFilterableMatches =
+    myMatchesOnly && user
+      ? season.matches.filter((m) => m.player1.id === user.id || m.player2.id === user.id)
+      : season.matches;
+
+  // Grouping keys on the raw match.date string rather than a parsed calendar day. This only stays
+  // correct because every match date in this app is built from a date-only "YYYY-MM-DD" form value
+  // (Add Match, Reschedule, season-creation round dates), which always parses to UTC midnight — so
+  // every match on the same calendar day shares a byte-identical date string.
+  const dateCounts = new Map<string, number>();
+  for (const match of dateFilterableMatches) {
+    dateCounts.set(match.date, (dateCounts.get(match.date) ?? 0) + 1);
+  }
+  const sortedDates = [...dateCounts.keys()].sort();
+
+  const dateViewMatches = (
+    selectedDate === "all" ? dateFilterableMatches : dateFilterableMatches.filter((m) => m.date === selectedDate)
+  )
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
 
   return (
     <div className="p-4">
@@ -183,51 +250,59 @@ export default function SeasonMatches() {
           Delete Selected ({selectedMatchIds.size})
         </button>
       )}
-      <RoundRobinSchedule
-        matches={season.matches}
-        participants={season.participants}
-        renderMatchActions={(match) => {
-          const canRecordResult =
-            !!user && (user.role === "admin" || user.id === match.player1.id || user.id === match.player2.id);
-
-          if (!canRecordResult) {
-            return formatMatchSummary(match);
-          }
-
-          return (
-            <>
-              {user?.role === "admin" && (
-                <>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${match.player1.displayName} vs ${match.player2.displayName}`}
-                    checked={selectedMatchIds.has(match.id)}
-                    onChange={() => toggleMatchSelection(match.id)}
-                  />
-                  <input
-                    type="date"
-                    aria-label={`Reschedule ${match.player1.displayName} vs ${match.player2.displayName}`}
-                    value={match.date.slice(0, 10)}
-                    onChange={(e) => void handleReschedule(match.id, e.target.value)}
-                    className="rounded border border-gray-300 p-1"
-                  />
-                  <button onClick={() => void handleToggleStatus(match)} className="text-primary underline">
-                    {match.status === "cancelled" ? "Restore" : "Cancel"}
-                  </button>
-                </>
-              )}
-              {(match.status === "scheduled" || match.status === "in_progress") && (
-                <Link to={`/season/matches/${match.id}/live`} className="text-primary underline">
-                  {match.status === "in_progress" ? "Resume Live" : "Start Live"}
-                </Link>
-              )}
-              <Link to={`/season/matches/${match.id}/result`} className="text-primary underline">
-                {match.status === "played" ? "Edit Result" : "Enter Result"}
-              </Link>
-            </>
-          );
-        }}
-      />
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setViewMode("round")}
+          className={viewMode === "round" ? "font-bold underline" : "text-primary underline"}
+        >
+          Round view
+        </button>
+        <button
+          onClick={() => setViewMode("date")}
+          className={viewMode === "date" ? "font-bold underline" : "text-primary underline"}
+        >
+          Date view
+        </button>
+      </div>
+      {viewMode === "round" ? (
+        <RoundRobinSchedule
+          matches={season.matches}
+          participants={season.participants}
+          renderMatchActions={renderMatchActions}
+        />
+      ) : (
+        <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setSelectedDate("all")}
+              className={selectedDate === "all" ? "font-bold underline" : "text-primary underline"}
+            >
+              All Matches ({dateFilterableMatches.length})
+            </button>
+            {sortedDates.map((date) => {
+              const count = dateCounts.get(date)!;
+              return (
+                <button
+                  key={date}
+                  onClick={() => setSelectedDate(date)}
+                  className={selectedDate === date ? "font-bold underline" : "text-primary underline"}
+                >
+                  {new Date(date).toLocaleDateString()} ({count} {count === 1 ? "match" : "matches"})
+                </button>
+              );
+            })}
+          </div>
+          <label className="mb-2 flex items-center gap-2">
+            <input type="checkbox" checked={myMatchesOnly} onChange={(e) => setMyMatchesOnly(e.target.checked)} />
+            My matches only
+          </label>
+          {dateViewMatches.length === 0 ? (
+            <p>No matches</p>
+          ) : (
+            <MatchList matches={dateViewMatches} renderMatchActions={renderMatchActions} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
