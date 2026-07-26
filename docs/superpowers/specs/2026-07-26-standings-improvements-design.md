@@ -36,6 +36,8 @@ New module `src/lib/sortable.ts`:
 ```typescript
 export type SortState<K extends string> = { column: K; direction: "asc" | "desc" } | null;
 
+export type SortComparator<T> = (a: T, b: T, direction: "asc" | "desc") => number;
+
 export function toggleSort<K extends string>(current: SortState<K>, column: K): SortState<K> {
   if (!current || current.column !== column) {
     return { column, direction: "asc" };
@@ -46,26 +48,49 @@ export function toggleSort<K extends string>(current: SortState<K>, column: K): 
 export function sortRows<T, K extends string>(
   rows: T[],
   sort: SortState<K>,
-  comparators: Record<K, (a: T, b: T) => number>
+  comparators: Record<K, SortComparator<T>>
 ): T[] {
   if (!sort) return rows;
   const comparator = comparators[sort.column];
-  const sorted = [...rows].sort(comparator);
-  return sort.direction === "asc" ? sorted : sorted.reverse();
+  return [...rows].sort((a, b) => comparator(a, b, sort.direction));
+}
+
+export function numericComparator<T>(
+  getValue: (row: T) => number | null,
+  { nullsLast = false }: { nullsLast?: boolean } = {}
+): SortComparator<T> {
+  return (a, b, direction) => {
+    const av = getValue(a);
+    const bv = getValue(b);
+    if (nullsLast) {
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+    }
+    const diff = (av ?? 0) - (bv ?? 0);
+    return direction === "asc" ? diff : -diff;
+  };
+}
+
+export function stringComparator<T>(getValue: (row: T) => string): SortComparator<T> {
+  return (a, b, direction) => {
+    const result = getValue(a).localeCompare(getValue(b), undefined, { sensitivity: "base" });
+    return direction === "asc" ? result : -result;
+  };
 }
 ```
 
-`sortRows` performs a stable sort by the single active column only — no re-application of any other tiebreak. Comparators are supplied by each table; a comparator returning a value that treats `null` as "greater than any number" gives the required "nulls always last regardless of direction" behavior for the Highest Checkout column (reversing a nulls-last ascending sort for descending would put nulls first, which is why direction-independent null placement needs to be baked into the comparator itself, not left to the generic reverse).
+Each comparator receives the current direction directly, rather than `sortRows` sorting ascending and reversing the whole array for descending — reversing would flip null placement along with everything else, which breaks "nulls always sort last regardless of direction" for the Highest Checkout column. Baking direction into each comparator (via `numericComparator`/`stringComparator`) keeps null placement independent of direction while still flipping the non-null ordering correctly. `sortRows` itself performs a stable sort by the single active column only — no re-application of any other tiebreak.
 
-**`Standings.tsx`**: holds `useState<SortState<"rank" | "player" | "matchesPlayed" | "legsWon" | "legsLost" | "diff" | "highestCheckout">>(null)`. Defines one comparator per column (numeric for all but `player`, which is case-insensitive alphabetical on `displayName`; `highestCheckout`'s comparator places `null` last in both directions). Calls `sortRows(rows, sort, comparators)` before rendering. Critically, the `rank` column's displayed values are **never recomputed** by sorting — they always reflect each row's actual `rank` from `computeStandings`, regardless of which column the table is currently sorted by; sorting only changes display order.
+**`Standings.tsx`**: holds `useState<SortState<"rank" | "player" | "matchesPlayed" | "legsWon" | "legsLost" | "diff" | "highestCheckout">>(null)`. Builds one comparator per column using the `numericComparator`/`stringComparator` factories (`player` uses `stringComparator` on `displayName`; `highestCheckout` uses `numericComparator` with `{ nullsLast: true }`; the rest use plain `numericComparator`). Calls `sortRows(rows, sort, comparators)` before rendering. Critically, the `rank` column's displayed values are **never recomputed** by sorting — they always reflect each row's actual `rank` from `computeStandings`, regardless of which column the table is currently sorted by; sorting only changes display order.
 
-**`PlayerStats.tsx`**: same pattern, columns `"displayName" | "threeDartAverage" | "oneEightyCount"`.
+**`PlayerStats.tsx`**: same pattern, columns `"displayName" | "threeDartAverage" | "oneEightyCount"`, no `nullsLast` needed (none of its values are nullable).
 
 Each sortable `<th>` renders as a clickable button showing the column label, a small arrow (▲ ascending / ▼ descending) when it's the active sort column, and `aria-sort="ascending" | "descending" | "none"` on the `<th>` itself.
 
 ## Section 3: Testing
 
-- `src/lib/sortable.test.ts` (new): `toggleSort` starts a fresh column ascending, flips direction on repeated clicks of the same column, resets to ascending when switching columns; `sortRows` covers ascending/descending numeric and alphabetical ordering, stability on ties, no-op when `sort` is `null`.
+- `src/lib/sortable.test.ts` (new): `toggleSort` starts a fresh column ascending, flips direction on repeated clicks of the same column, resets to ascending when switching columns; `sortRows` covers ascending/descending ordering and no-op when `sort` is `null`; `numericComparator`/`stringComparator` cover ascending/descending ordering directly, and `numericComparator`'s `nullsLast` option covers nulls sorting last in *both* directions (the specific behavior the direction-aware-comparator design exists to make possible).
 - `src/lib/standings.test.ts`: new cases for `highestCheckout` — `null` for a player with no played matches or no recorded checkouts, correct max across multiple played matches.
 - `src/pages/season/Standings.test.tsx`: new cases — Highest Checkout column values including "—" for `null`; clicking a header re-orders rows and sets the arrow/`aria-sort`; clicking twice reverses order; `rank` values stay fixed after a re-sort; nulls sort last for Highest Checkout in both directions.
 - `src/pages/season/PlayerStats.test.tsx`: equivalent sorting cases for its three columns.
